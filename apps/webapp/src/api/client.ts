@@ -1,6 +1,7 @@
 import type {
   ChapterMapResponse,
   QuizAnswerResult,
+  QuizSessionResult,
   ChapterNodeSession,
   ChapterNodeStatus,
   ChapterNodeSummary,
@@ -165,6 +166,31 @@ export async function submitQuizAnswer(
   }
 
   return response.json() as Promise<QuizAnswerResult>
+}
+
+export async function finishQuizSession(sessionId: string, signal?: AbortSignal): Promise<QuizSessionResult> {
+  const baseUrl = getApiBaseUrl()
+
+  if (!baseUrl) {
+    return {
+      sessionId,
+      correctAnswers: 1,
+      totalQuestions: 2,
+      stars: 1,
+      completed: false
+    }
+  }
+
+  const response = await fetch(`${baseUrl}/api/quiz/sessions/${sessionId}/finish`, {
+    method: 'POST',
+    signal
+  })
+
+  if (!response.ok) {
+    throw new Error(`Finish request failed: ${response.status}`)
+  }
+
+  return response.json() as Promise<QuizSessionResult>
 }
 
 function mapChapterNodeStatus(status: ChapterMapResponse['nodes'][number]['status']): ChapterNodeStatus {

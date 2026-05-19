@@ -135,3 +135,11 @@ export type QuizAnswerResult = {
   totalQuestions: number
   stars: number
 }
+
+export type QuizSessionResult = {
+  sessionId: string
+  correctAnswers: number
+  totalQuestions: number
+  stars: number
+  completed: boolean
+}

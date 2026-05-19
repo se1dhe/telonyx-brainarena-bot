@@ -18,6 +18,7 @@
 - Карта главы берёт данные из backend API.
 - Первая точка карты открывает playable quiz panel.
 - Ответы больше не проверяются на клиенте локально для live API.
+- После завершения точки показывается result panel со звёздами и возвратом к карте.
 
 ### Backend API
 
@@ -71,7 +72,7 @@
 - Нет ranked leaderboard из backend.
 - Нет Telegram deep links для challenge/rematch.
 - Нет Telegram Stars invoice skeleton.
-- Нет полноценного result screen после завершения точки.
+- Result screen пока не обновляет карту прогресса после возврата.
 
 ## Следующий порядок разработки
 

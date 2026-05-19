@@ -35,3 +35,4 @@
 - Added JPA entities and a persistence service for quiz sessions and submitted answers.
 - Changed quiz start/answer/finish flow to persist session state in PostgreSQL.
 - Added explicit JPA entity scanning for persistence package entities loaded from module jars.
+- Added a quiz result state in the Mini App after finishing a chapter node.

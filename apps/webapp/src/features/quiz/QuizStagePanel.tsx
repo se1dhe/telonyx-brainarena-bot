@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion'
-import { Check, ChevronRight, X } from 'lucide-react'
+import { Check, ChevronRight, RotateCcw, Trophy, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { submitQuizAnswer } from '../../api/client'
-import type { ChapterNodeSession, QuizAnswerResult } from '../../api/contracts'
+import { finishQuizSession, submitQuizAnswer } from '../../api/client'
+import type { ChapterNodeSession, QuizAnswerResult, QuizSessionResult } from '../../api/contracts'
 
 type QuizStagePanelProps = {
   session: ChapterNodeSession
@@ -13,8 +13,10 @@ export function QuizStagePanel({ session, onClose }: QuizStagePanelProps) {
   const [questionIndex, setQuestionIndex] = useState(0)
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null)
   const [answerResult, setAnswerResult] = useState<QuizAnswerResult | null>(null)
+  const [sessionResult, setSessionResult] = useState<QuizSessionResult | null>(null)
   const [stars, setStars] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isFinishing, setIsFinishing] = useState(false)
   const question = session.questions[questionIndex]
   const questionCount = session.questions.length
   const isAnswered = answerResult?.questionId === question.id
@@ -45,15 +47,51 @@ export function QuizStagePanel({ session, onClose }: QuizStagePanelProps) {
     }
   }
 
-  function goNext() {
+  async function goNext() {
     if (isLastQuestion) {
-      onClose()
+      setIsFinishing(true)
+      try {
+        const result = await finishQuizSession(session.sessionId)
+        setSessionResult(result)
+        setStars(result.stars)
+      } finally {
+        setIsFinishing(false)
+      }
       return
     }
 
     setQuestionIndex((current) => current + 1)
     setSelectedOptionId(null)
     setAnswerResult(null)
+  }
+
+  if (sessionResult) {
+    return (
+      <motion.section
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="arena-card p-4 text-center"
+      >
+        <div className="mx-auto grid h-20 w-20 place-items-center rounded-full border border-arena-gold/40 bg-arena-gold/10 text-arena-gold">
+          <Trophy className="h-10 w-10" />
+        </div>
+        <p className="arena-label mt-5">Точка завершена</p>
+        <h2 className="mt-1 text-2xl font-bold text-arena-ivory">{session.title}</h2>
+        <p className="mt-3 text-sm leading-6 text-arena-muted">
+          Верных ответов: {sessionResult.correctAnswers} из {sessionResult.totalQuestions}
+        </p>
+        <div className="mt-5 rounded-2xl border border-arena-gold/25 bg-arena-gold/10 px-4 py-5">
+          <p className="font-display text-5xl font-bold text-arena-gold">{sessionResult.stars} ★</p>
+          <p className="mt-2 text-sm font-bold text-arena-ivory">
+            {sessionResult.completed ? 'Прогресс сохранён' : 'Можно усилить результат повторением'}
+          </p>
+        </div>
+        <button className="arena-primary mt-5 w-full" onClick={onClose}>
+          <RotateCcw className="h-5 w-5" />
+          Вернуться к карте
+        </button>
+      </motion.section>
+    )
   }
 
   return (
@@ -109,8 +147,8 @@ export function QuizStagePanel({ session, onClose }: QuizStagePanelProps) {
         </div>
       )}
 
-      <button className="arena-primary mt-5 w-full" onClick={goNext} disabled={!isAnswered}>
-        {isLastQuestion ? 'Завершить' : 'Дальше'}
+      <button className="arena-primary mt-5 w-full" onClick={goNext} disabled={!isAnswered || isFinishing}>
+        {isLastQuestion ? (isFinishing ? 'Считаем' : 'Завершить') : 'Дальше'}
         <ChevronRight className="h-5 w-5" />
       </button>
     </motion.section>
