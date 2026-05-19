@@ -1,10 +1,10 @@
-# IMPLEMENTATION_STATUS — что уже реализовано и что делать дальше
+# IMPLEMENTATION_STATUS — фактическое состояние Brain Arena
 
-Документ фиксирует фактическое состояние Brain Arena после перехода на Railway-friendly monorepo и первых MVP-срезов.
+Документ фиксирует текущее состояние проекта после первых MVP-срезов, которые уже перенесены прямо в `main`.
 
-## 1. Текущий статус
+## 1. Структура проекта
 
-Проект уже не является одиночным frontend-прототипом. Сейчас это monorepo:
+Проект является Railway-friendly monorepo:
 
 ```text
 telonyx-brainarena-bot/
@@ -27,11 +27,11 @@ telonyx-brainarena-bot/
   docs/
 ```
 
-Корень очищен от legacy Vite-файлов. Frontend находится только в `apps/webapp`.
+Frontend находится только в `apps/webapp`. Возвращать Vite/React файлы в корень нельзя.
 
 ---
 
-## 2. Уже реализовано
+## 2. Уже сделано в `main`
 
 ### 2.1 Frontend / Telegram Mini App
 
@@ -51,7 +51,7 @@ apps/webapp
 - lucide-react;
 - Roman Temple визуальный стиль;
 - feature-разбиение Home на `features/home`, `features/chapters`, `features/daily`, `features/pvp`, `features/ranked`, `features/profile`;
-- typed contracts для текущих mock/API-shape;
+- typed contracts для текущих API-shape;
 - Telegram WebApp runtime wrapper с browser fallback;
 - TelegramProvider;
 - frontend API client;
@@ -72,23 +72,27 @@ apps/webapp
 - `apps/webapp/railway.json`;
 - webapp Dockerfile.
 
-Важно: текущий Roman Temple UI является базой продукта. Его нельзя удалять или заменять с нуля.
+Дополнительно уже добавлено:
+
+```text
+apps/webapp/src/api/client.ts
+apps/webapp/src/api/useMe.ts
+```
+
+`client.ts` содержит `fetchMe(initData)`, который вызывает:
+
+```text
+GET /api/me
+Header: X-Telegram-Init-Data: <Telegram WebApp initData>
+```
+
+`useMe(telegram)` безопасно возвращает guest state, если Mini App открыт вне Telegram или backend вернул `401`.
+
+Важно: `Home.tsx` ещё нужно подключить к `useMe`, чтобы UI показывал имя реального Telegram-пользователя.
 
 ---
 
 ### 2.2 Backend API
-
-Создан Gradle multi-module skeleton.
-
-Есть:
-
-```text
-settings.gradle
-build.gradle
-apps/api/build.gradle
-apps/bot/build.gradle
-packages/*/build.gradle
-```
 
 API entrypoint:
 
@@ -111,10 +115,6 @@ GET  /api/chapters/{chapterSlug}/map
 POST /api/chapters/{chapterSlug}/nodes/{nodeId}/start
 ```
 
-CORS:
-
-- есть configurable CORS через `APP_CORS_ALLOWED_ORIGINS`.
-
 Telegram auth slice:
 
 ```text
@@ -125,16 +125,66 @@ apps/api/src/main/java/app/telonyx/brainarena/api/config/TgAuthConfig.java
 apps/api/src/main/java/app/telonyx/brainarena/api/controller/MeController.java
 ```
 
-Добавлен первый защищённый Telegram-backed endpoint:
+Защищённый Telegram-backed endpoint:
 
 ```text
 GET /api/me
 Header: X-Telegram-Init-Data: <Telegram WebApp initData>
 ```
 
+Сейчас `/api/me`:
+
+- валидирует Telegram `initData` на backend;
+- возвращает `401`, если данные невалидны;
+- создаёт или обновляет пользователя в PostgreSQL через `UserIdentityService`;
+- возвращает `userId`, `telegramId`, Telegram profile fields, `displayName`, `authDate`.
+
 ---
 
-### 2.3 Telegram Bot MVP
+### 2.3 Persistence foundation
+
+`apps/api` уже подключает модуль:
+
+```text
+implementation project(':packages:persistence')
+```
+
+`application.yml` уже содержит базовую настройку:
+
+```text
+spring.datasource.url
+spring.datasource.username
+spring.datasource.password
+spring.jpa.hibernate.ddl-auto=validate
+spring.flyway.enabled=true
+```
+
+Добавлена первая миграция:
+
+```text
+packages/persistence/src/main/resources/db/migration/V1__users_and_telegram_accounts.sql
+```
+
+Она создаёт:
+
+```text
+users
+telegram_accounts
+```
+
+Добавлены JPA-сущности и сервис:
+
+```text
+packages/persistence/src/main/java/app/telonyx/brainarena/persistence/user/UserEntity.java
+packages/persistence/src/main/java/app/telonyx/brainarena/persistence/user/TelegramAccountEntity.java
+packages/persistence/src/main/java/app/telonyx/brainarena/persistence/user/UserIdentityService.java
+```
+
+`UserIdentityService` делает upsert Telegram-пользователя через `EntityManager`.
+
+---
+
+### 2.4 Telegram Bot MVP
 
 Bot service запускается отдельным Spring Boot приложением и использует Telegram long polling через Telegram HTTP API.
 
@@ -146,7 +196,7 @@ Bot service запускается отдельным Spring Boot приложе
 
 ---
 
-### 2.4 Domain skeleton
+### 2.5 Domain skeleton
 
 Создан первый доменный сервис:
 
@@ -171,7 +221,7 @@ packages/domain/src/test/java/app/telonyx/brainarena/domain/quiz/ResultCalculato
 
 ---
 
-### 2.5 Railway / Infrastructure
+### 2.6 Railway / Infrastructure
 
 Добавлено:
 
@@ -199,40 +249,32 @@ PostgreSQL
 Redis
 ```
 
-Railway notes:
-
-- `brainarena-webapp` — canonical web service;
-- obsolete `brainarena-web` удалён;
-- API/Bot используют `RAILWAY_DOCKERFILE_PATH`;
-- stale root Railway config удалён;
-- live API health и public config уже проверялись Codex-ом.
-
 ---
 
-## 3. Что ещё не реализовано
+## 3. Что ещё не сделано
 
 ### 3.1 Frontend
 
-Пока не реализовано полностью:
+Пока не завершено:
 
-- `components/temple` для общих UI-компонентов;
+- подключить `Home.tsx` к `useMe`, чтобы показывать реального Telegram-пользователя;
 - полноценный routing между Home / Chapter / PvP / Ranked / Profile;
-- server-authoritative quiz flow без `correctOptionId` на клиенте;
+- server-authoritative quiz UI без локального `correctOptionId`;
 - полноценные экраны Duel Result и Season Overview;
-- полноценные loading/error/empty states на всех feature-срезах.
-
-Критично: в production нельзя отдавать `correctOptionId` клиенту до ответа пользователя. Сейчас это допустимо только как MVP/demo preview.
+- loading/error/empty states на всех feature-срезах.
 
 ---
 
 ### 3.2 Backend API
 
-Пока не реализовано:
+Пока не завершено:
 
-- persistent users;
-- categories;
-- questions;
-- quiz sessions;
+- persisted courses;
+- persisted chapters;
+- persisted chapter nodes;
+- persisted questions;
+- persisted question options;
+- persisted quiz sessions;
 - persisted chapter progress;
 - server-authoritative answer submit flow;
 - daily ritual API;
@@ -246,15 +288,15 @@ Railway notes:
 
 ### 3.3 Persistence
 
-Пока не реализовано:
+Пока не завершено:
 
-- JPA entities;
-- repositories;
-- Flyway migrations;
-- seed данных;
-- PostgreSQL connection config;
+- repositories или полноценные persistence services для курсов/глав/вопросов;
+- Flyway seed данных;
 - Redis config;
-- audit tables для рейтинга и платежей.
+- audit tables для рейтинга и платежей;
+- progress tables;
+- quiz session tables;
+- PvP duel tables.
 
 ---
 
@@ -270,9 +312,23 @@ Railway notes:
 
 ---
 
-## 4. Следующие шаги
+## 4. Выполненные шаги последней сессии
 
-### Step 1 — проверить сборку после auth slice
+1. Смержен в `main` PR #1 с frontend `fetchMe` и `useMe`.
+2. Старый PR #2 закрыт как неактуальный.
+3. Persistence-срез перенесён прямо в `main`, без новых PR:
+   - подключён `packages:persistence` к `apps/api`;
+   - добавлен datasource/JPA/Flyway config;
+   - добавлена миграция `users` + `telegram_accounts`;
+   - добавлены `UserEntity`, `TelegramAccountEntity`, `UserIdentityService`;
+   - `/api/me` теперь делает upsert Telegram user в БД.
+4. Принято правило дальнейшей работы: новый код пушить прямо в `main`, без создания дополнительных веток и PR.
+
+---
+
+## 5. Ближайший порядок для рабочего MVP
+
+### Step 1 — проверить сборку
 
 ```bash
 cd apps/webapp
@@ -284,54 +340,30 @@ npm run build
 ./gradlew clean build
 ```
 
-Ожидаемый результат:
-
-- frontend билдится из `apps/webapp`;
-- backend modules собираются;
-- тесты проходят.
+Если сборка падает — сначала исправить compile/runtime ошибки.
 
 ---
 
-### Step 2 — подключить frontend к `/api/me`
+### Step 2 — подключить UI к реальному Telegram user
 
-Добавить в webapp API client:
+Файл:
 
 ```text
-GET /api/me
-X-Telegram-Init-Data: telegram.initData
+apps/webapp/src/pages/Home.tsx
 ```
 
-UI поведение:
+Нужно:
 
-- в Telegram показывать реального Telegram user;
-- вне Telegram использовать browser fallback;
-- если `/api/me` вернул 401, не сохранять прогресс и показывать безопасный guest state.
+- взять `telegram` из `useTelegram()`;
+- вызвать `useMe(telegram)`;
+- собрать `currentPlayer` на базе mock `player`, но с именем из Telegram profile;
+- передать `currentPlayer` в `AppHeader`, `RatingCard`, `ProfileCard`.
 
 ---
 
-### Step 3 — сделать persistence foundation
+### Step 3 — server-authoritative quiz flow
 
-Реализовать:
-
-```text
-PostgreSQL config
-Flyway
-users
-telegram_accounts
-courses
-chapters
-chapter_nodes
-questions
-question_options
-chapter_progress
-node_attempts
-```
-
----
-
-### Step 4 — server-authoritative quiz flow
-
-Заменить demo-flow с `correctOptionId` на серверную проверку:
+Нужно заменить demo-flow с `correctOptionId` на серверную проверку:
 
 ```text
 POST /api/chapters/{chapterSlug}/nodes/{nodeId}/start
@@ -345,6 +377,24 @@ GET  /api/quiz/sessions/{sessionId}/result
 - клиент не получает правильный ответ до отправки своего ответа;
 - звёзды и прогресс считает backend;
 - chapter progress сохраняется в PostgreSQL.
+
+---
+
+### Step 4 — persisted content
+
+Добавить таблицы и seed:
+
+```text
+courses
+chapters
+chapter_nodes
+questions
+question_options
+chapter_progress
+node_attempts
+quiz_sessions
+quiz_answers
+```
 
 ---
 
@@ -373,25 +423,11 @@ GET  /api/pvp/duels/{matchId}
 
 ---
 
-## 5. Ближайший рекомендуемый порядок
-
-1. Проверить сборку `apps/webapp`.
-2. Проверить `./gradlew clean build`.
-3. Исправить ошибки после добавления Telegram auth slice.
-4. Подключить frontend к `/api/me`.
-5. Добавить PostgreSQL/Flyway foundation.
-6. Реализовать users + telegram_accounts.
-7. Реализовать persisted chapter map.
-8. Убрать `correctOptionId` из client-visible quiz start response.
-9. Реализовать server-side answer submit.
-10. Потом переходить к Daily Ritual и PvP.
-
----
-
 ## 6. Важные запреты
 
 - не возвращать frontend в корень;
 - не создавать второй независимый frontend;
+- не создавать новые ветки/PR без прямого запроса;
 - не удалять Roman Temple UI;
 - не считать PvP/ranked результат на клиенте;
 - не доверять Telegram user без backend validation;
