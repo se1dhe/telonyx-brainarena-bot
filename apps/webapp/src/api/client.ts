@@ -1,4 +1,10 @@
-import type { ChapterMapResponse, ChapterNodeStatus, ChapterNodeSummary, PublicConfig } from './contracts'
+import type {
+  ChapterMapResponse,
+  ChapterNodeSession,
+  ChapterNodeStatus,
+  ChapterNodeSummary,
+  PublicConfig
+} from './contracts'
 
 const fallbackConfig: PublicConfig = {
   app: 'Brain Arena',
@@ -8,7 +14,16 @@ const fallbackConfig: PublicConfig = {
 }
 
 export function getApiBaseUrl() {
-  return import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? ''
+  const buildTimeBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '')
+  if (buildTimeBaseUrl) {
+    return buildTimeBaseUrl
+  }
+
+  if (globalThis.location?.hostname === 'brainarena-webapp-production.up.railway.app') {
+    return 'https://brainarena-api-production.up.railway.app'
+  }
+
+  return ''
 }
 
 export async function fetchPublicConfig(signal?: AbortSignal): Promise<PublicConfig> {
@@ -53,6 +68,25 @@ export async function fetchChapterMap(chapterSlug: string, signal?: AbortSignal)
   }))
 }
 
+export async function startChapterNode(chapterSlug: string, nodeId: number, signal?: AbortSignal): Promise<ChapterNodeSession> {
+  const baseUrl = getApiBaseUrl()
+
+  if (!baseUrl) {
+    return fallbackNodeSession(chapterSlug, nodeId)
+  }
+
+  const response = await fetch(`${baseUrl}/api/chapters/${chapterSlug}/nodes/${nodeId}/start`, {
+    method: 'POST',
+    signal
+  })
+
+  if (!response.ok) {
+    throw new Error(`Node start request failed: ${response.status}`)
+  }
+
+  return response.json() as Promise<ChapterNodeSession>
+}
+
 function mapChapterNodeStatus(status: ChapterMapResponse['nodes'][number]['status']): ChapterNodeStatus {
   if (status === 'MASTERED' || status === 'COMPLETED') {
     return 'done'
@@ -63,4 +97,42 @@ function mapChapterNodeStatus(status: ChapterMapResponse['nodes'][number]['statu
   }
 
   return 'locked'
+}
+
+function fallbackNodeSession(chapterSlug: string, nodeId: number): ChapterNodeSession {
+  return {
+    sessionId: `local-${chapterSlug}-${nodeId}`,
+    chapterSlug,
+    nodeId,
+    title: 'Форум знатока',
+    totalQuestions: 2,
+    questions: [
+      {
+        id: 'local-q-1',
+        type: 'MULTIPLE_CHOICE',
+        category: 'История',
+        prompt: 'Кто, согласно традиции, был первым царем Рима?',
+        options: [
+          { id: 'a', text: 'Ромул' },
+          { id: 'b', text: 'Нума Помпилий' },
+          { id: 'c', text: 'Тарквиний Гордый' },
+          { id: 'd', text: 'Сервий Туллий' }
+        ],
+        correctOptionId: 'a',
+        explanation: 'Римская традиция связывает основание города с Ромулом.'
+      },
+      {
+        id: 'local-q-2',
+        type: 'TRUE_FALSE',
+        category: 'Наука',
+        prompt: 'Вода достигает наибольшей плотности примерно при 4 °C.',
+        options: [
+          { id: 'a', text: 'Верно' },
+          { id: 'b', text: 'Неверно' }
+        ],
+        correctOptionId: 'a',
+        explanation: 'Это свойство объясняет, почему лед образуется сверху, а не со дна.'
+      }
+    ]
+  }
 }

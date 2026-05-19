@@ -56,6 +56,8 @@ apps/webapp
 - Telegram WebApp wrapper с browser fallback;
 - TelegramProvider;
 - API client skeleton для `GET /api/public/config`;
+- подключение карты главы к backend API с fallback для локального режима;
+- игровой panel для прохождения первой точки главы;
 - карта прохождения главы;
 - mock-прогресс главы `6 / 15 ★`;
 - категории;
@@ -121,9 +123,30 @@ GET /api/public/config
 apps/api/src/main/java/app/telonyx/brainarena/api/controller/PublicConfigController.java
 ```
 
+Добавлены MVP endpoints глав:
+
+```text
+GET  /api/courses
+GET  /api/courses/{courseSlug}/chapters
+GET  /api/chapters/{chapterSlug}/map
+POST /api/chapters/{chapterSlug}/nodes/{nodeId}/start
+```
+
 ---
 
-### 2.3 Domain skeleton
+### 2.3 Telegram Bot MVP
+
+Bot service запускается отдельным Spring Boot приложением и использует Telegram long polling.
+
+Есть:
+
+- `/start`;
+- WebApp button для открытия Brain Arena;
+- Railway env configuration без хранения bot token в репозитории.
+
+---
+
+### 2.4 Domain skeleton
 
 Создан первый доменный сервис:
 
@@ -148,7 +171,7 @@ packages/domain/src/test/java/app/telonyx/brainarena/domain/quiz/ResultCalculato
 
 ---
 
-### 2.4 Infrastructure
+### 2.5 Infrastructure
 
 Добавлено:
 
@@ -173,7 +196,7 @@ docs/deployment/RAILWAY.md
 
 ---
 
-### 2.5 Product docs
+### 2.6 Product docs
 
 Уже есть отдельные продуктовые спецификации:
 
@@ -212,8 +235,6 @@ docs/deployment/RAILWAY.md
 - `components/temple` для общих UI-компонентов;
 - loading/error/empty states для реальных запросов;
 - routing между Home / Chapter / PvP / Ranked / Profile;
-- подключение к backend;
-- адаптер mock data -> API contracts;
 - полноценные экраны Chapter Map, Quiz Stage, Duel Result, Season Overview.
 
 ---
@@ -228,7 +249,7 @@ docs/deployment/RAILWAY.md
 - categories;
 - questions;
 - quiz sessions;
-- chapter map API;
+- persisted chapter progress;
 - daily ritual API;
 - PvP async duel API;
 - ranked profile API;
@@ -256,9 +277,6 @@ docs/deployment/RAILWAY.md
 
 Пока не реализовано:
 
-- подключение TelegramBots Java API;
-- `/start`;
-- WebApp button;
 - deep links для challenge;
 - result sharing;
 - rematch CTA;

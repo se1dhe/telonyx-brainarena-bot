@@ -5,9 +5,11 @@ import { NodeStars } from './NodeStars'
 
 type StageCardProps = {
   stage: ActiveStageSummary
+  onStart: () => void
+  isStarting?: boolean
 }
 
-export function StageCard({ stage }: StageCardProps) {
+export function StageCard({ stage, onStart, isStarting = false }: StageCardProps) {
   return (
     <section className="arena-card p-4">
       <div className="flex items-start justify-between gap-4">
@@ -40,9 +42,9 @@ export function StageCard({ stage }: StageCardProps) {
           </div>
         ))}
       </div>
-      <button className="arena-primary mt-5 w-full">
+      <button className="arena-primary mt-5 w-full" onClick={onStart} disabled={isStarting}>
         <Play className="h-5 w-5 fill-current" />
-        Играть точку
+        {isStarting ? 'Открываем' : 'Играть точку'}
       </button>
     </section>
   )

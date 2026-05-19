@@ -3,6 +3,7 @@ package app.telonyx.brainarena.api.controller;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -43,6 +44,87 @@ public class ChapterController {
         );
     }
 
+    @PostMapping("/chapters/{chapterSlug}/nodes/{nodeId}/start")
+    public NodeSessionResponse startNode(@PathVariable String chapterSlug, @PathVariable int nodeId) {
+        return new NodeSessionResponse(
+            "node-" + chapterSlug + "-" + nodeId + "-mvp",
+            chapterSlug,
+            nodeId,
+            "Форум знатока",
+            5,
+            List.of(
+                new QuizQuestionResponse(
+                    "q-001",
+                    "MULTIPLE_CHOICE",
+                    "История",
+                    "Кто, согласно традиции, был первым царем Рима?",
+                    List.of(
+                        new QuizOptionResponse("a", "Ромул"),
+                        new QuizOptionResponse("b", "Нума Помпилий"),
+                        new QuizOptionResponse("c", "Тарквиний Гордый"),
+                        new QuizOptionResponse("d", "Сервий Туллий")
+                    ),
+                    "a",
+                    "Римская традиция связывает основание города с Ромулом."
+                ),
+                new QuizQuestionResponse(
+                    "q-002",
+                    "TRUE_FALSE",
+                    "Наука",
+                    "Вода достигает наибольшей плотности примерно при 4 °C.",
+                    List.of(
+                        new QuizOptionResponse("a", "Верно"),
+                        new QuizOptionResponse("b", "Неверно")
+                    ),
+                    "a",
+                    "Это свойство объясняет, почему лед образуется сверху, а не со дна."
+                ),
+                new QuizQuestionResponse(
+                    "q-003",
+                    "MULTIPLE_CHOICE",
+                    "География",
+                    "Какая столица расположена на реке Тибр?",
+                    List.of(
+                        new QuizOptionResponse("a", "Афины"),
+                        new QuizOptionResponse("b", "Рим"),
+                        new QuizOptionResponse("c", "Мадрид"),
+                        new QuizOptionResponse("d", "Прага")
+                    ),
+                    "b",
+                    "Рим исторически вырос на берегах Тибра."
+                ),
+                new QuizQuestionResponse(
+                    "q-004",
+                    "MULTIPLE_CHOICE",
+                    "Кино",
+                    "В каком фильме звучит фраза «Я сделаю ему предложение, от которого он не сможет отказаться»?",
+                    List.of(
+                        new QuizOptionResponse("a", "Касабланка"),
+                        new QuizOptionResponse("b", "Крестный отец"),
+                        new QuizOptionResponse("c", "Гладиатор"),
+                        new QuizOptionResponse("d", "Лицо со шрамом")
+                    ),
+                    "b",
+                    "Это одна из самых известных реплик Вито Корлеоне."
+                ),
+                new QuizQuestionResponse(
+                    "q-005",
+                    "MULTIPLE_CHOICE",
+                    "Логика",
+                    "Что продолжает ряд: 2, 4, 8, 16, ...?",
+                    List.of(
+                        new QuizOptionResponse("a", "18"),
+                        new QuizOptionResponse("b", "24"),
+                        new QuizOptionResponse("c", "32"),
+                        new QuizOptionResponse("d", "36")
+                    ),
+                    "c",
+                    "Каждый следующий член ряда вдвое больше предыдущего."
+                )
+            )
+        );
+    }
+
     public record CourseResponse(String slug, String title, int maxStars, int earnedStars) {
     }
 
@@ -74,5 +156,29 @@ public class ChapterController {
         int positionX,
         int positionY
     ) {
+    }
+
+    public record NodeSessionResponse(
+        String sessionId,
+        String chapterSlug,
+        int nodeId,
+        String title,
+        int totalQuestions,
+        List<QuizQuestionResponse> questions
+    ) {
+    }
+
+    public record QuizQuestionResponse(
+        String id,
+        String type,
+        String category,
+        String prompt,
+        List<QuizOptionResponse> options,
+        String correctOptionId,
+        String explanation
+    ) {
+    }
+
+    public record QuizOptionResponse(String id, String text) {
     }
 }

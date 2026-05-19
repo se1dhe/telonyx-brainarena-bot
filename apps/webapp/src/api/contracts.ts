@@ -100,3 +100,27 @@ export type ChapterMapNodeResponse = {
   positionX: number
   positionY: number
 }
+
+export type ChapterNodeSession = {
+  sessionId: string
+  chapterSlug: string
+  nodeId: number
+  title: string
+  totalQuestions: number
+  questions: QuizQuestion[]
+}
+
+export type QuizQuestion = {
+  id: string
+  type: 'MULTIPLE_CHOICE' | 'TRUE_FALSE'
+  category: string
+  prompt: string
+  options: QuizOption[]
+  correctOptionId: string
+  explanation: string
+}
+
+export type QuizOption = {
+  id: string
+  text: string
+}

@@ -21,3 +21,6 @@
 - Added a minimal Telegram long-polling bot runner with `/start` and a Mini App launch button.
 - Connected the webapp chapter map to the live API with a local fallback for offline/dev mode.
 - Deployed the updated webapp and verified the live mobile viewport in browser automation.
+- Added `POST /api/chapters/{chapterSlug}/nodes/{nodeId}/start` for the first playable chapter node.
+- Added a Telegram-style quiz stage panel with answer feedback and local star preview.
+- Added a Railway runtime API fallback for the webapp so production calls the live backend even when Vite build-time env is absent.
