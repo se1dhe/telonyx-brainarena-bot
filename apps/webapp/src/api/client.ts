@@ -95,14 +95,21 @@ export async function fetchMe(initData: string, signal?: AbortSignal): Promise<M
   }
 }
 
-export async function fetchChapterMap(chapterSlug: string, signal?: AbortSignal): Promise<ChapterNodeSummary[]> {
+export async function fetchChapterMap(
+  chapterSlug: string,
+  initData = '',
+  signal?: AbortSignal
+): Promise<ChapterNodeSummary[]> {
   const baseUrl = getApiBaseUrl()
 
   if (!baseUrl) {
     return []
   }
 
-  const response = await fetch(`${baseUrl}/api/chapters/${chapterSlug}/map`, { signal })
+  const response = await fetch(`${baseUrl}/api/chapters/${chapterSlug}/map`, {
+    signal,
+    headers: telegramHeaders(initData)
+  })
 
   if (!response.ok) {
     throw new Error(`Chapter map request failed: ${response.status}`)
@@ -121,7 +128,12 @@ export async function fetchChapterMap(chapterSlug: string, signal?: AbortSignal)
   }))
 }
 
-export async function startChapterNode(chapterSlug: string, nodeId: number, signal?: AbortSignal): Promise<ChapterNodeSession> {
+export async function startChapterNode(
+  chapterSlug: string,
+  nodeId: number,
+  initData = '',
+  signal?: AbortSignal
+): Promise<ChapterNodeSession> {
   const baseUrl = getApiBaseUrl()
 
   if (!baseUrl) {
@@ -130,7 +142,8 @@ export async function startChapterNode(chapterSlug: string, nodeId: number, sign
 
   const response = await fetch(`${baseUrl}/api/chapters/${chapterSlug}/nodes/${nodeId}/start`, {
     method: 'POST',
-    signal
+    signal,
+    headers: telegramHeaders(initData)
   })
 
   if (!response.ok) {
@@ -203,6 +216,16 @@ function mapChapterNodeStatus(status: ChapterMapResponse['nodes'][number]['statu
   }
 
   return 'locked'
+}
+
+function telegramHeaders(initData: string): HeadersInit {
+  if (!initData) {
+    return {}
+  }
+
+  return {
+    'X-Telegram-Init-Data': initData
+  }
 }
 
 function fallbackNodeSession(chapterSlug: string, nodeId: number): ChapterNodeSession {

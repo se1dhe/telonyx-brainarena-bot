@@ -318,7 +318,6 @@ Redis
 Пока не завершено:
 
 - полноценный routing между Home / Chapter / PvP / Ranked / Profile;
-- result screen после завершения точки;
 - полноценные экраны Duel Result и Season Overview;
 - loading/error/empty states на всех feature-срезах.
 
@@ -333,8 +332,6 @@ Redis
 - persisted chapter nodes;
 - persisted questions;
 - persisted question options;
-- persisted quiz sessions;
-- persisted chapter progress;
 - daily ritual API;
 - PvP async duel API;
 - ranked profile API;
@@ -352,8 +349,6 @@ Redis
 - Flyway seed данных;
 - Redis config;
 - audit tables для рейтинга и платежей;
-- progress tables;
-- quiz session tables;
 - PvP duel tables.
 
 ---
@@ -388,62 +383,18 @@ Redis
    - добавлен конвертер Railway `DATABASE_URL` в JDBC datasource properties;
    - `application.yml` больше не использует `DATABASE_URL` напрямую как `spring.datasource.url`.
 6. Принято правило дальнейшей работы: новый код пушить прямо в `main`, без создания дополнительных веток и PR.
+7. Добавлен server-authoritative quiz flow:
+   - start endpoint создаёт quiz session;
+   - answer endpoint проверяет ответ на backend;
+   - finish endpoint возвращает результат и звёзды.
+8. Добавлены `quiz_sessions`, `quiz_answers` и `user_node_progress`.
+9. Mini App показывает result panel после завершения точки и обновляет карту после возврата.
 
 ---
 
 ## 5. Ближайший порядок для рабочего MVP
 
-### Step 1 — проверить сборку и старт API
-
-```bash
-./gradlew :apps:api:bootJar --no-daemon
-```
-
-В Railway API должен пройти дальше ошибки:
-
-```text
-URL must start with 'jdbc'
-```
-
----
-
-### Step 2 — подключить UI к реальному Telegram user
-
-Файл:
-
-```text
-apps/webapp/src/pages/Home.tsx
-```
-
-Нужно:
-
-- взять `telegram` из `useTelegram()`;
-- вызвать `useMe(telegram)`;
-- собрать `currentPlayer` на базе mock `player`, но с именем из Telegram profile;
-- передать `currentPlayer` в `AppHeader`, `RatingCard`, `ProfileCard`.
-
----
-
-### Step 3 — server-authoritative quiz flow
-
-Нужно заменить demo-flow с `correctOptionId` на серверную проверку:
-
-```text
-POST /api/chapters/{chapterSlug}/nodes/{nodeId}/start
-POST /api/quiz/sessions/{sessionId}/answer
-POST /api/quiz/sessions/{sessionId}/finish
-GET  /api/quiz/sessions/{sessionId}/result
-```
-
-Правило:
-
-- клиент не получает правильный ответ до отправки своего ответа;
-- звёзды и прогресс считает backend;
-- chapter progress сохраняется в PostgreSQL.
-
----
-
-### Step 4 — persisted content
+### Step 1 — persisted content
 
 Добавить таблицы и seed:
 
@@ -453,11 +404,15 @@ chapters
 chapter_nodes
 questions
 question_options
-chapter_progress
-node_attempts
-quiz_sessions
-quiz_answers
 ```
+
+Переключить `ChapterController` с in-memory fixtures на persistence service.
+
+---
+
+### Step 2 — unlock logic
+
+Подключить статусы `available/locked/completed/mastered` к звёздам пользователя, а не к статичным fixtures.
 
 ---
 

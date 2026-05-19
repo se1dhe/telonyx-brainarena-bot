@@ -1,5 +1,6 @@
 package app.telonyx.brainarena.persistence.quiz;
 
+import app.telonyx.brainarena.persistence.user.UserEntity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
@@ -15,7 +16,18 @@ public class QuizSessionPersistenceService {
 
     @Transactional
     public QuizSessionEntity startSession(String sessionToken, String chapterSlug, int nodeId, int totalQuestions) {
-        QuizSessionEntity session = new QuizSessionEntity(sessionToken, chapterSlug, nodeId, totalQuestions);
+        return startSession(sessionToken, null, chapterSlug, nodeId, totalQuestions);
+    }
+
+    @Transactional
+    public QuizSessionEntity startSession(
+        String sessionToken,
+        UserEntity user,
+        String chapterSlug,
+        int nodeId,
+        int totalQuestions
+    ) {
+        QuizSessionEntity session = new QuizSessionEntity(sessionToken, user, chapterSlug, nodeId, totalQuestions);
         entityManager.persist(session);
         return session;
     }

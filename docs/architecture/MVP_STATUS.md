@@ -16,9 +16,10 @@
 - Frontend умеет работать вне Telegram через fallback.
 - Home подключён к `useMe`: в Telegram отображается имя реального пользователя.
 - Карта главы берёт данные из backend API.
-- Первая точка карты открывает playable quiz panel.
+- Активная точка карты открывает playable quiz panel.
 - Ответы больше не проверяются на клиенте локально для live API.
 - После завершения точки показывается result panel со звёздами и возвратом к карте.
+- В Telegram Mini App карта запрашивается с initData и может показывать сохранённый прогресс пользователя.
 
 ### Backend API
 
@@ -35,6 +36,7 @@
   - `POST /api/quiz/sessions/{sessionId}/finish`
 - Start response не отдаёт `correctOptionId`; правильный ответ появляется только после submit.
 - Quiz session и submitted answers сохраняются в PostgreSQL.
+- При полном завершении сессии backend сохраняет лучший результат точки для Telegram-пользователя.
 - Есть Telegram initData validation.
 - Есть `GET /api/me` с backend validation и upsert Telegram user.
 
@@ -45,8 +47,10 @@
 - Railway `DATABASE_URL` конвертируется в JDBC properties.
 - Добавлена миграция `users` и `telegram_accounts`.
 - Добавлена миграция `quiz_sessions` и `quiz_answers`.
+- Добавлена миграция `user_node_progress`.
 - Добавлены JPA entities и `UserIdentityService`.
 - Добавлен `QuizSessionPersistenceService`.
+- Добавлен `UserProgressPersistenceService`.
 
 ### Telegram Bot
 
@@ -63,22 +67,21 @@
 
 ## Ещё не готово для нормального MVP
 
-- Вопросы, главы и прогресс пока не перенесены в PostgreSQL.
+- Вопросы и главы пока не перенесены в PostgreSQL.
 - Нет таблиц `courses`, `chapters`, `chapter_nodes`, `questions`, `question_options`.
-- Нет сохранения результата прохождения точки.
 - Нет unlock logic по звёздам из БД.
 - Нет daily ritual API.
 - Нет async PvP duel lifecycle.
 - Нет ranked leaderboard из backend.
 - Нет Telegram deep links для challenge/rematch.
 - Нет Telegram Stars invoice skeleton.
-- Result screen пока не обновляет карту прогресса после возврата.
+- Result screen обновляет карту после возврата, но visual unlock/progress economy ещё черновая.
 
 ## Следующий порядок разработки
 
 1. Перенести контент глав и вопросов в Flyway seed.
-2. Добавить persisted quiz sessions, answers, attempts и chapter progress.
-3. Сделать result screen после завершения точки.
-4. Подключить карту к сохранённому прогрессу.
-5. Добавить daily ritual поверх того же quiz session engine.
-6. После этого начинать PvP MVP.
+2. Добавить unlock logic и честные состояния `available/locked/completed/mastered`.
+3. Добавить daily ritual поверх того же quiz session engine.
+4. Добавить mistake review и personal library shell.
+5. Добавить Telegram challenge links и async PvP MVP.
+6. После этого подключать Stars invoice skeleton.

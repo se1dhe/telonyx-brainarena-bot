@@ -36,3 +36,4 @@
 - Changed quiz start/answer/finish flow to persist session state in PostgreSQL.
 - Added explicit JPA entity scanning for persistence package entities loaded from module jars.
 - Added a quiz result state in the Mini App after finishing a chapter node.
+- Added persisted per-user chapter node progress and wired the active map node to Telegram-authenticated sessions.

@@ -22,7 +22,7 @@ export function Home() {
   const telegram = useTelegram()
   const me = useMe(telegram)
   const fallbackNodes = useMemo(() => mapNodes, [])
-  const chapterMap = useChapterMap('path-of-scholar', fallbackNodes)
+  const chapterMap = useChapterMap('path-of-scholar', fallbackNodes, telegram.initData)
   const currentPlayer = useMemo(() => {
     const profile = me.profile
     if (!profile) {
@@ -41,11 +41,16 @@ export function Home() {
   async function handleStartNode() {
     setIsStartingNode(true)
     try {
-      const session = await startChapterNode('path-of-scholar', 1)
+      const session = await startChapterNode('path-of-scholar', 3, telegram.initData)
       setNodeSession(session)
     } finally {
       setIsStartingNode(false)
     }
+  }
+
+  function closeQuizStage() {
+    setNodeSession(null)
+    chapterMap.refresh()
   }
 
   return (
@@ -60,7 +65,7 @@ export function Home() {
           <ChapterMapCard nodes={chapterMap.nodes} />
           <div className="space-y-4">
             <StageCard stage={activeStage} onStart={handleStartNode} isStarting={isStartingNode} />
-            {nodeSession && <QuizStagePanel session={nodeSession} onClose={() => setNodeSession(null)} />}
+            {nodeSession && <QuizStagePanel session={nodeSession} onClose={closeQuizStage} />}
             <DailyModes modes={dailyModes} />
           </div>
         </div>

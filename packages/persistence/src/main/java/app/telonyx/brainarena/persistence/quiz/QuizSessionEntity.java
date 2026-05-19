@@ -55,7 +55,12 @@ public class QuizSessionEntity {
     }
 
     public QuizSessionEntity(String sessionToken, String chapterSlug, Integer nodeId, Integer totalQuestions) {
+        this(sessionToken, null, chapterSlug, nodeId, totalQuestions);
+    }
+
+    public QuizSessionEntity(String sessionToken, UserEntity user, String chapterSlug, Integer nodeId, Integer totalQuestions) {
         this.sessionToken = sessionToken;
+        this.user = user;
         this.chapterSlug = chapterSlug;
         this.nodeId = nodeId;
         this.totalQuestions = totalQuestions;
@@ -72,6 +77,10 @@ public class QuizSessionEntity {
 
     public String getSessionToken() {
         return sessionToken;
+    }
+
+    public UserEntity getUser() {
+        return user;
     }
 
     public String getChapterSlug() {
