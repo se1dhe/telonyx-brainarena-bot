@@ -4,6 +4,16 @@ server:
 spring:
   application:
     name: brainarena-api
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/brainarena}
+    username: ${POSTGRES_USER:brainarena}
+    password: ${POSTGRES_PASSWORD:brainarena}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
 
 brainarena:
   cors:
