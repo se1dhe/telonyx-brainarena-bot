@@ -1,10 +1,10 @@
 # IMPLEMENTATION_STATUS — что уже реализовано и что делать дальше
 
-Документ фиксирует фактическое состояние репозитория после перехода на Railway-friendly monorepo.
+Документ фиксирует фактическое состояние Brain Arena после перехода на Railway-friendly monorepo и первых MVP-срезов.
 
 ## 1. Текущий статус
 
-Проект переведён из одиночного frontend-прототипа в понятную monorepo-структуру:
+Проект уже не является одиночным frontend-прототипом. Сейчас это monorepo:
 
 ```text
 telonyx-brainarena-bot/
@@ -27,13 +27,13 @@ telonyx-brainarena-bot/
   docs/
 ```
 
-Корень очищен от legacy Vite-файлов. Frontend теперь находится только в `apps/webapp`.
+Корень очищен от legacy Vite-файлов. Frontend находится только в `apps/webapp`.
 
 ---
 
 ## 2. Уже реализовано
 
-### 2.1 Frontend / Telegram Mini App prototype
+### 2.1 Frontend / Telegram Mini App
 
 Реализовано в:
 
@@ -50,16 +50,17 @@ apps/webapp
 - Framer Motion;
 - lucide-react;
 - Roman Temple визуальный стиль;
-- стартовый Home screen;
 - feature-разбиение Home на `features/home`, `features/chapters`, `features/daily`, `features/pvp`, `features/ranked`, `features/profile`;
 - typed contracts для текущих mock/API-shape;
-- Telegram WebApp wrapper с browser fallback;
+- Telegram WebApp runtime wrapper с browser fallback;
 - TelegramProvider;
-- API client skeleton для `GET /api/public/config`;
+- frontend API client;
+- `GET /api/public/config` client;
 - подключение карты главы к backend API с fallback для локального режима;
-- игровой panel для прохождения первой точки главы;
+- runtime API fallback для Railway production;
+- Telegram-style quiz stage panel;
+- answer feedback и local star preview;
 - карта прохождения главы;
-- mock-прогресс главы `6 / 15 ★`;
 - категории;
 - рейтинг игрока;
 - daily modes;
@@ -67,29 +68,19 @@ apps/webapp
 - leaderboard;
 - profile card;
 - bottom navigation;
+- `apps/webapp/package-lock.json` для `npm ci`;
+- `apps/webapp/railway.json`;
 - webapp Dockerfile.
 
-Главные файлы:
-
-```text
-apps/webapp/src/app/App.tsx
-apps/webapp/src/main.tsx
-apps/webapp/src/pages/Home.tsx
-apps/webapp/src/theme/content.ts
-apps/webapp/src/styles/global.css
-apps/webapp/public/assets/seal.svg
-apps/webapp/public/assets/laurel.svg
-```
-
-Важно: текущий UI является базой продукта. Его нельзя удалять или заменять с нуля.
+Важно: текущий Roman Temple UI является базой продукта. Его нельзя удалять или заменять с нуля.
 
 ---
 
-### 2.2 Backend skeleton
+### 2.2 Backend API
 
 Создан Gradle multi-module skeleton.
 
-Файлы:
+Есть:
 
 ```text
 settings.gradle
@@ -99,31 +90,19 @@ apps/bot/build.gradle
 packages/*/build.gradle
 ```
 
-Создан API entrypoint:
+API entrypoint:
 
 ```text
 apps/api/src/main/java/app/telonyx/brainarena/api/BrainArenaApiApplication.java
 ```
 
-Создан Bot entrypoint:
-
-```text
-apps/bot/src/main/java/app/telonyx/brainarena/bot/BrainArenaBotApplication.java
-```
-
-Создан первый публичный endpoint:
+Публичный config endpoint:
 
 ```text
 GET /api/public/config
 ```
 
-Файл:
-
-```text
-apps/api/src/main/java/app/telonyx/brainarena/api/controller/PublicConfigController.java
-```
-
-Добавлены MVP endpoints глав:
+MVP endpoints глав:
 
 ```text
 GET  /api/courses
@@ -132,16 +111,37 @@ GET  /api/chapters/{chapterSlug}/map
 POST /api/chapters/{chapterSlug}/nodes/{nodeId}/start
 ```
 
+CORS:
+
+- есть configurable CORS через `APP_CORS_ALLOWED_ORIGINS`.
+
+Telegram auth slice:
+
+```text
+packages/security/src/main/java/app/telonyx/brainarena/security/telegram/TelegramUser.java
+packages/security/src/main/java/app/telonyx/brainarena/security/telegram/TelegramAuthResult.java
+packages/security/src/main/java/app/telonyx/brainarena/security/telegram/TelegramInitDataValidator.java
+apps/api/src/main/java/app/telonyx/brainarena/api/config/TgAuthConfig.java
+apps/api/src/main/java/app/telonyx/brainarena/api/controller/MeController.java
+```
+
+Добавлен первый защищённый Telegram-backed endpoint:
+
+```text
+GET /api/me
+Header: X-Telegram-Init-Data: <Telegram WebApp initData>
+```
+
 ---
 
 ### 2.3 Telegram Bot MVP
 
-Bot service запускается отдельным Spring Boot приложением и использует Telegram long polling.
+Bot service запускается отдельным Spring Boot приложением и использует Telegram long polling через Telegram HTTP API.
 
 Есть:
 
 - `/start`;
-- WebApp button для открытия Brain Arena;
+- WebApp button `Открыть Brain Arena`;
 - Railway env configuration без хранения bot token в репозитории.
 
 ---
@@ -171,7 +171,7 @@ packages/domain/src/test/java/app/telonyx/brainarena/domain/quiz/ResultCalculato
 
 ---
 
-### 2.5 Infrastructure
+### 2.5 Railway / Infrastructure
 
 Добавлено:
 
@@ -180,6 +180,7 @@ docker-compose.yml
 infra/docker/api.Dockerfile
 infra/docker/bot.Dockerfile
 apps/webapp/Dockerfile
+apps/webapp/railway.json
 .env.example
 ```
 
@@ -188,41 +189,23 @@ apps/webapp/Dockerfile
 - PostgreSQL;
 - Redis.
 
-Railway-friendly схема уже описана в:
+Railway target split:
 
 ```text
-docs/deployment/RAILWAY.md
+brainarena-webapp
+brainarena-api
+brainarena-bot
+PostgreSQL
+Redis
 ```
 
----
+Railway notes:
 
-### 2.6 Product docs
-
-Уже есть отдельные продуктовые спецификации:
-
-```text
-ROADMAP.md
-PROMT.md
-AGENTS.md
-SKILLS.md
-docs/product/CHAPTERS.md
-docs/product/PVP_RANKED_SEASONS.md
-docs/architecture/PROJECT_ARCHITECTURE.md
-docs/architecture/FRONTEND_STATUS.md
-docs/deployment/RAILWAY.md
-```
-
-Закреплены ключевые продуктовые направления:
-
-- Daily Ritual;
-- главы и карта прохождения;
-- PvP-first подход;
-- async duels;
-- рейтинги;
-- сезоны;
-- лидерборды;
-- Roman Temple UI;
-- Telegram Stars без pay-to-win.
+- `brainarena-webapp` — canonical web service;
+- obsolete `brainarena-web` удалён;
+- API/Bot используют `RAILWAY_DOCKERFILE_PATH`;
+- stale root Railway config удалён;
+- live API health и public config уже проверялись Codex-ом.
 
 ---
 
@@ -230,12 +213,15 @@ docs/deployment/RAILWAY.md
 
 ### 3.1 Frontend
 
-Пока не реализовано:
+Пока не реализовано полностью:
 
 - `components/temple` для общих UI-компонентов;
-- loading/error/empty states для реальных запросов;
-- routing между Home / Chapter / PvP / Ranked / Profile;
-- полноценные экраны Chapter Map, Quiz Stage, Duel Result, Season Overview.
+- полноценный routing между Home / Chapter / PvP / Ranked / Profile;
+- server-authoritative quiz flow без `correctOptionId` на клиенте;
+- полноценные экраны Duel Result и Season Overview;
+- полноценные loading/error/empty states на всех feature-срезах.
+
+Критично: в production нельзя отдавать `correctOptionId` клиенту до ответа пользователя. Сейчас это допустимо только как MVP/demo preview.
 
 ---
 
@@ -243,13 +229,12 @@ docs/deployment/RAILWAY.md
 
 Пока не реализовано:
 
-- Telegram initData validation;
-- auth/session layer;
-- users;
+- persistent users;
 - categories;
 - questions;
 - quiz sessions;
 - persisted chapter progress;
+- server-authoritative answer submit flow;
 - daily ritual API;
 - PvP async duel API;
 - ranked profile API;
@@ -287,9 +272,7 @@ docs/deployment/RAILWAY.md
 
 ## 4. Следующие шаги
 
-## Step 1 — проверить сборку новой структуры
-
-Команды:
+### Step 1 — проверить сборку после auth slice
 
 ```bash
 cd apps/webapp
@@ -305,124 +288,80 @@ npm run build
 
 - frontend билдится из `apps/webapp`;
 - backend modules собираются;
-- тест `ResultCalculatorTest` проходит.
+- тесты проходят.
 
 ---
 
-## Step 2 — подготовить Railway webapp deploy
+### Step 2 — подключить frontend к `/api/me`
 
-Создать Railway service:
-
-```text
-Service name: brainarena-webapp
-Root Directory: apps/webapp
-Build Command: npm ci && npm run build
-Start Command: npm run start
-```
-
-Переменные:
+Добавить в webapp API client:
 
 ```text
-VITE_API_BASE_URL=https://brainarena-api-production.up.railway.app
-VITE_TELEGRAM_BOT_USERNAME=iq_arenabot
+GET /api/me
+X-Telegram-Init-Data: telegram.initData
 ```
 
-Проверить, что webapp открывается в браузере.
+UI поведение:
+
+- в Telegram показывать реального Telegram user;
+- вне Telegram использовать browser fallback;
+- если `/api/me` вернул 401, не сохранять прогресс и показывать безопасный guest state.
 
 ---
 
-## Step 3 — подготовить Railway API deploy
-
-Создать Railway service:
-
-```text
-Service name: brainarena-api
-Root Directory: /
-Dockerfile Path: infra/docker/api.Dockerfile
-```
-
-Переменные:
-
-```text
-APP_ENV=production
-APP_PORT=8080
-DATABASE_URL=<Railway Postgres URL>
-REDIS_URL=<Railway Redis URL>
-TELEGRAM_BOT_TOKEN=<secret>
-TELEGRAM_BOT_USERNAME=iq_arenabot
-TELEGRAM_WEBAPP_URL=<webapp url>
-CHALLENGE_SIGNING_SECRET=<secret>
-```
-
-Проверить:
-
-```text
-GET /actuator/health
-GET /api/public/config
-```
-
----
-
-## Step 4 — Telegram Mini App integration
-
-Добавить:
-
-```text
-apps/webapp/src/api/telegram.ts
-apps/webapp/src/app/providers/TelegramProvider.tsx
-```
-
-MVP-функции:
-
-- `ready()`;
-- `expand()`;
-- чтение `initData`;
-- чтение `initDataUnsafe`;
-- отправка `initData` на backend;
-- безопасный fallback для браузера вне Telegram.
-
----
-
-## Step 5 — Telegram bot MVP
-
-Добавить в `apps/bot`:
-
-- Telegram dependency;
-- bot config;
-- `/start` handler;
-- inline button `Открыть Brain Arena`;
-- WebApp URL из env `TELEGRAM_WEBAPP_URL`.
-
----
-
-## Step 6 — первый реальный backend domain slice
-
-Начать с глав, потому что frontend уже визуально показывает карту.
+### Step 3 — сделать persistence foundation
 
 Реализовать:
 
 ```text
-Course
-Chapter
-ChapterNode
-ChapterProgress
-NodeAttempt
-```
-
-Endpoints:
-
-```text
-GET /api/courses
-GET /api/chapters/{chapterSlug}/map
-POST /api/chapters/{chapterSlug}/nodes/{nodeId}/start
-GET /api/chapters/{chapterSlug}/progress
+PostgreSQL config
+Flyway
+users
+telegram_accounts
+courses
+chapters
+chapter_nodes
+questions
+question_options
+chapter_progress
+node_attempts
 ```
 
 ---
 
-## Step 7 — PvP MVP
+### Step 4 — server-authoritative quiz flow
 
-После chapter API реализовать async duel:
+Заменить demo-flow с `correctOptionId` на серверную проверку:
+
+```text
+POST /api/chapters/{chapterSlug}/nodes/{nodeId}/start
+POST /api/quiz/sessions/{sessionId}/answer
+POST /api/quiz/sessions/{sessionId}/finish
+GET  /api/quiz/sessions/{sessionId}/result
+```
+
+Правило:
+
+- клиент не получает правильный ответ до отправки своего ответа;
+- звёзды и прогресс считает backend;
+- chapter progress сохраняется в PostgreSQL.
+
+---
+
+### Step 5 — Daily Ritual
+
+После quiz-session flow добавить daily режим:
+
+```text
+POST /api/quiz/daily/start
+GET  /api/quiz/daily/status
+```
+
+---
+
+### Step 6 — PvP MVP
+
+После server-authoritative quiz flow реализовать async duel:
 
 ```text
 POST /api/pvp/duels/async/start
@@ -436,16 +375,16 @@ GET  /api/pvp/duels/{matchId}
 
 ## 5. Ближайший рекомендуемый порядок
 
-1. Проверить локальную сборку `apps/webapp`.
-2. Проверить Gradle build.
-3. Исправить ошибки сборки, если они есть.
-4. Задеплоить `brainarena-webapp` на Railway.
-5. Задеплоить `brainarena-api` на Railway.
-6. Подключить Telegram Mini App SDK.
-7. Реализовать `/start` в боте.
-8. Подключить frontend к `/api/public/config`.
-9. Реализовать API карты главы.
-10. Реализовать async PvP duel.
+1. Проверить сборку `apps/webapp`.
+2. Проверить `./gradlew clean build`.
+3. Исправить ошибки после добавления Telegram auth slice.
+4. Подключить frontend к `/api/me`.
+5. Добавить PostgreSQL/Flyway foundation.
+6. Реализовать users + telegram_accounts.
+7. Реализовать persisted chapter map.
+8. Убрать `correctOptionId` из client-visible quiz start response.
+9. Реализовать server-side answer submit.
+10. Потом переходить к Daily Ritual и PvP.
 
 ---
 
@@ -456,5 +395,6 @@ GET  /api/pvp/duels/{matchId}
 - не удалять Roman Temple UI;
 - не считать PvP/ranked результат на клиенте;
 - не доверять Telegram user без backend validation;
+- не отдавать `correctOptionId` клиенту до ответа пользователя в production;
 - не хранить платежи и ranked progress только в Redis;
 - не делать pay-to-win механику.
