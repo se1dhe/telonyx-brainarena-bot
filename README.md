@@ -1,8 +1,49 @@
 # Brain Arena Bot
 
-Brain Arena — Telegram-first quiz-trivia продукт в римской эстетике: Telegram Bot + Telegram Mini App + backend + личный кабинет знаний.
+Brain Arena — Telegram-first quiz-trivia продукт в римской эстетике: Telegram Bot + Telegram Mini App + backend + PvP/ranked/seasons.
 
-Проект строится не как обычная викторина, а как интеллектуальная арена с ежедневными ритуалами, асинхронными дуэлями, прогрессом по категориям, личной библиотекой и честной Telegram Stars монетизацией.
+Проект строится не как обычная викторина, а как интеллектуальная арена с ежедневными ритуалами, главами, картой прогресса, асинхронными дуэлями, рейтингами, сезонами и честной Telegram Stars монетизацией без pay-to-win.
+
+## Current Status
+
+Репозиторий уже переведён в Railway-friendly monorepo.
+
+Актуальная структура:
+
+```text
+apps/
+  webapp/      # React/Vite Telegram Mini App
+  api/         # Spring Boot Backend API
+  bot/         # Telegram Bot entrypoint
+
+packages/
+  common/
+  domain/
+  persistence/
+  security/
+  integration/
+  analytics/
+
+infra/
+  docker/
+
+docs/
+  architecture/
+  deployment/
+  product/
+```
+
+Legacy frontend из корня удалён. Frontend теперь живёт только в:
+
+```text
+apps/webapp
+```
+
+Подробный статус реализации смотри здесь:
+
+- [`docs/architecture/IMPLEMENTATION_STATUS.md`](./docs/architecture/IMPLEMENTATION_STATUS.md)
+- [`docs/architecture/PROJECT_ARCHITECTURE.md`](./docs/architecture/PROJECT_ARCHITECTURE.md)
+- [`docs/deployment/RAILWAY.md`](./docs/deployment/RAILWAY.md)
 
 ## Product Vision
 
@@ -10,81 +51,117 @@ Brain Arena должен давать пользователю ощущение 
 
 - быстрый вход в игру за 30–90 секунд;
 - ежедневный ритуал на 3–7 вопросов;
-- асинхронные вызовы друзьям через Telegram;
-- категории, главы и mini-quests;
-- прогресс в виде мозаики/витража/печатей;
-- сохранённые тесты и словарь терминов;
+- главы и карта прохождения;
+- асинхронные PvP-вызовы через Telegram;
+- ranked arena;
+- сезоны и лидерборды;
+- прогресс по категориям;
+- личная библиотека ошибок и терминов;
 - премиальный светлый Roman UI;
 - монетизация без pay-to-win.
 
-## Core Skills
+## Core Docs
 
-Правила проекта описаны в двух главных документах:
+Перед разработкой обязательно читать:
 
 - [`SKILLS.md`](./SKILLS.md) — архитектура навыков продукта: Temple, Codex, Archivarius, Caesar, Archimedes.
-- [`AGENTS.md`](./AGENTS.md) — инструкция для coding agents: роли, правила кода, UI, домена, контента и Git workflow.
-
-Любой агент или разработчик обязан читать эти файлы перед началом работы.
+- [`AGENTS.md`](./AGENTS.md) — инструкция для coding agents.
+- [`PROMT.md`](./PROMT.md) — основной implementation prompt.
+- [`ROADMAP.md`](./ROADMAP.md) — план разработки.
+- [`docs/product/CHAPTERS.md`](./docs/product/CHAPTERS.md) — главы и карта прохождения.
+- [`docs/product/PVP_RANKED_SEASONS.md`](./docs/product/PVP_RANKED_SEASONS.md) — PvP, рейтинги и сезоны.
 
 ## Main Product Loops
 
 ```text
 Open App
-  → Daily Ritual / Duel / Category Quest
-  → Answer Questions
-  → Explanation
-  → Reward / Progress
-  → Share / Challenge / Rematch
-  → Return Tomorrow
+  -> Daily Ritual / Chapter / PvP Duel
+  -> Answer Questions
+  -> Explanation
+  -> Reward / Rating / Stars
+  -> Share / Challenge / Rematch
+  -> Return Tomorrow
 ```
 
-## MVP Priority
+## Implemented Now
 
-Первый рабочий MVP должен включать:
+Уже есть:
 
-1. Telegram Mini App shell.
-2. Roman Temple UI-kit.
-3. Daily Ritual flow.
-4. QuizStage для прохождения вопросов.
-5. ResultCard для шаринга результата.
-6. Async Challenge deep links.
-7. User profile / Archivarius cabinet shell.
-8. Basic analytics events.
-9. Question report-flow.
-10. Telegram Stars premium skeleton.
+- React/Vite frontend в `apps/webapp`;
+- Roman Temple стартовый UI;
+- карта главы на mock-данных;
+- PvP duel card на mock-данных;
+- leaderboard на mock-данных;
+- Gradle multi-module skeleton;
+- `apps/api` Spring Boot entrypoint;
+- `apps/bot` Spring Boot entrypoint;
+- `GET /api/public/config`;
+- `ResultCalculator` в `packages/domain`;
+- тест для подсчёта звёзд;
+- Dockerfiles для API/Bot/WebApp;
+- `docker-compose.yml` для PostgreSQL и Redis;
+- `.env.example`.
 
-## Current Frontend Direction
+## Not Implemented Yet
 
-Существующий прототип описывает направление Roman Codex Quiz:
+Ещё нужно реализовать:
 
-- React 18;
-- TypeScript strict;
-- Vite;
-- TailwindCSS;
-- Framer Motion;
-- lucide-react.
+- Telegram WebApp SDK wrapper;
+- backend validation для Telegram `initData`;
+- users/categories/questions;
+- chapter map API;
+- daily ritual API;
+- async PvP duel API;
+- ranked profile API;
+- seasons/leaderboards;
+- Telegram bot `/start` + WebApp button;
+- Telegram Stars skeleton;
+- persistence layer, Flyway migrations, seed data.
 
-Telegram Apps SDK должен подключаться отдельным шагом после выбора актуального пакета и схемы валидации `initData`.
+## Railway Deployment Shape
 
-## Recommended Architecture
+Railway services:
 
 ```text
-apps/
-  webapp/      # Telegram Mini App
-  bot/         # Telegram bot entrypoint
-  api/         # Backend API
-  admin/       # Content/admin panel, позже
+brainarena-webapp -> Root Directory: apps/webapp
+brainarena-api    -> Dockerfile: infra/docker/api.Dockerfile
+brainarena-bot    -> Dockerfile: infra/docker/bot.Dockerfile
+brainarena-db     -> Railway PostgreSQL
+brainarena-redis  -> Railway Redis
+```
 
-packages/
-  ui/          # Roman Temple UI-kit
-  domain/      # Quiz, rating, streak, challenge logic
-  shared/      # Shared types/config
-  analytics/   # Event contracts
+## Local Development
 
-docs/
-  product/
-  architecture/
-  content/
+Infrastructure:
+
+```bash
+docker compose up -d postgres redis
+```
+
+Frontend:
+
+```bash
+cd apps/webapp
+npm ci
+npm run dev
+```
+
+Backend API:
+
+```bash
+./gradlew :apps:api:bootRun
+```
+
+Bot:
+
+```bash
+./gradlew :apps:bot:bootRun
+```
+
+Full backend build:
+
+```bash
+./gradlew clean build
 ```
 
 ## Design Direction
@@ -118,13 +195,15 @@ Premium не должен ломать честность игры.
 - ranked boosts;
 - нечестные подсказки в рейтинговом режиме.
 
-## Next Development Steps
+## Immediate Next Steps
 
-1. Проверить текущую структуру проекта и привести её к `apps/*` + `packages/*`.
-2. Добавить `packages/ui` с Temple tokens.
-3. Вынести доменную логику в `packages/domain`.
-4. Реализовать Daily Ritual как первый основной loop.
-5. Реализовать ResultCard и challenge link flow.
-6. Подключить Telegram initData validation.
-7. Добавить analytics event contracts.
-8. Подготовить Stars payment skeleton.
+1. Проверить `cd apps/webapp && npm ci && npm run build`.
+2. Проверить `./gradlew clean build`.
+3. Исправить возможные ошибки сборки после переноса структуры.
+4. Задеплоить `brainarena-webapp` на Railway.
+5. Задеплоить `brainarena-api` на Railway.
+6. Добавить Telegram WebApp SDK wrapper.
+7. Реализовать Telegram bot `/start` и WebApp button.
+8. Подключить frontend к `/api/public/config`.
+9. Реализовать chapter map API.
+10. Реализовать async PvP duel MVP.
