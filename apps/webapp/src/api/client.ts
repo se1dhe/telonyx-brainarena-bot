@@ -6,6 +6,15 @@ import type {
   PublicConfig
 } from './contracts'
 
+export type MeProfile = {
+  id: number
+  username?: string
+  firstName?: string
+  lastName?: string
+  photoUrl?: string
+  authDate: string
+}
+
 const fallbackConfig: PublicConfig = {
   app: 'Brain Arena',
   status: 'mock',
@@ -40,6 +49,48 @@ export async function fetchPublicConfig(signal?: AbortSignal): Promise<PublicCon
   }
 
   return response.json() as Promise<PublicConfig>
+}
+
+export async function fetchMe(initData: string, signal?: AbortSignal): Promise<MeProfile | null> {
+  const baseUrl = getApiBaseUrl()
+
+  if (!baseUrl || !initData) {
+    return null
+  }
+
+  const response = await fetch(`${baseUrl}/api/me`, {
+    method: 'GET',
+    signal,
+    headers: {
+      'X-Telegram-Init-Data': initData
+    }
+  })
+
+  if (response.status === 401) {
+    return null
+  }
+
+  if (!response.ok) {
+    throw new Error(`Me request failed: ${response.status}`)
+  }
+
+  const profile = (await response.json()) as {
+    telegramId: number
+    username?: string
+    firstName?: string
+    lastName?: string
+    photoUrl?: string
+    authDate: string
+  }
+
+  return {
+    id: profile.telegramId,
+    username: profile.username,
+    firstName: profile.firstName,
+    lastName: profile.lastName,
+    photoUrl: profile.photoUrl,
+    authDate: profile.authDate
+  }
 }
 
 export async function fetchChapterMap(chapterSlug: string, signal?: AbortSignal): Promise<ChapterNodeSummary[]> {
