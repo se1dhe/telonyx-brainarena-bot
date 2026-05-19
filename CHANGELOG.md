@@ -1,0 +1,16 @@
+# Changelog
+
+## 2026-05-19
+
+- Pulled latest monorepo updates from `origin/main`.
+- Refactored the Telegram Mini App Home screen into feature components without changing the Roman Temple UI.
+- Added typed frontend contracts for current mock/API shapes.
+- Added Telegram WebApp runtime wrapper and `TelegramProvider` with safe browser fallback.
+- Added frontend API client skeleton for `GET /api/public/config`.
+- Added `apps/webapp/package-lock.json` so webapp installs can use `npm ci`.
+- Configured Railway project resources for the target split: `brainarena-webapp`, `brainarena-api`, `brainarena-bot`, PostgreSQL, and Redis.
+- Added `apps/webapp/railway.json` for app-scoped Railway deploys and allowed the new Railway preview host in Vite.
+- Added MVP chapter/course API mock endpoints: `GET /api/courses`, `GET /api/courses/{courseSlug}/chapters`, and `GET /api/chapters/{chapterSlug}/map`.
+- Fixed `apps/webapp/Dockerfile` so Railway can deploy the webapp from `apps/webapp` as the service root.
+- Copied `vite.config.ts` into the webapp runtime image so `vite preview` keeps Railway `allowedHosts`.
+- Removed the obsolete Railway service `brainarena-web` after `brainarena-webapp` became the canonical web service.
