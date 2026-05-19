@@ -116,11 +116,22 @@ export type QuizQuestion = {
   category: string
   prompt: string
   options: QuizOption[]
-  correctOptionId: string
-  explanation: string
 }
 
 export type QuizOption = {
   id: string
   text: string
+}
+
+export type QuizAnswerResult = {
+  questionId: string
+  selectedOptionId: string
+  correctOptionId: string | null
+  correct: boolean
+  alreadyAnswered: boolean
+  explanation: string
+  correctAnswers: number
+  answeredQuestions: number
+  totalQuestions: number
+  stars: number
 }

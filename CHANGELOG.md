@@ -24,3 +24,10 @@
 - Added `POST /api/chapters/{chapterSlug}/nodes/{nodeId}/start` for the first playable chapter node.
 - Added a Telegram-style quiz stage panel with answer feedback and local star preview.
 - Added a Railway runtime API fallback for the webapp so production calls the live backend even when Vite build-time env is absent.
+- Pulled the latest `main` with Telegram initData validation, `/api/me`, JPA users, and Flyway user migrations.
+- Connected the Home screen to `useMe` so Telegram users replace the fallback profile name.
+- Changed quiz start responses so the client no longer receives `correctOptionId`.
+- Added server-authoritative answer checking through `POST /api/quiz/sessions/{sessionId}/answer`.
+- Added `POST /api/quiz/sessions/{sessionId}/finish` for MVP result summaries.
+- Fixed Railway webapp CLI deploy mode after the service root directory moved to `apps/webapp`.
+- Upgraded Flyway dependencies in `packages:persistence` for Railway PostgreSQL 18 compatibility.

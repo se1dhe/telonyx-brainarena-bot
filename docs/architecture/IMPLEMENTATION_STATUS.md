@@ -59,7 +59,8 @@ apps/webapp
 - подключение карты главы к backend API с fallback для локального режима;
 - runtime API fallback для Railway production;
 - Telegram-style quiz stage panel;
-- answer feedback и local star preview;
+- answer feedback после backend submit;
+- server-authoritative answer check для live API;
 - карта прохождения главы;
 - категории;
 - рейтинг игрока;
@@ -113,6 +114,8 @@ GET  /api/courses
 GET  /api/courses/{courseSlug}/chapters
 GET  /api/chapters/{chapterSlug}/map
 POST /api/chapters/{chapterSlug}/nodes/{nodeId}/start
+POST /api/quiz/sessions/{sessionId}/answer
+POST /api/quiz/sessions/{sessionId}/finish
 ```
 
 Telegram auth slice:
@@ -296,9 +299,8 @@ Redis
 
 Пока не завершено:
 
-- подключить `Home.tsx` к `useMe`, чтобы показывать реального Telegram-пользователя;
 - полноценный routing между Home / Chapter / PvP / Ranked / Profile;
-- server-authoritative quiz UI без локального `correctOptionId`;
+- result screen после завершения точки;
 - полноценные экраны Duel Result и Season Overview;
 - loading/error/empty states на всех feature-срезах.
 
@@ -315,7 +317,6 @@ Redis
 - persisted question options;
 - persisted quiz sessions;
 - persisted chapter progress;
-- server-authoritative answer submit flow;
 - daily ritual API;
 - PvP async duel API;
 - ranked profile API;

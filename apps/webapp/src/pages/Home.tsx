@@ -3,6 +3,8 @@ import { useMemo, useState } from 'react'
 import { startChapterNode } from '../api/client'
 import type { ChapterNodeSession } from '../api/contracts'
 import { useChapterMap } from '../api/useChapterMap'
+import { useMe } from '../api/useMe'
+import { useTelegram } from '../app/providers/TelegramProvider'
 import { AppHeader } from '../components/layout/AppHeader'
 import { BottomNav } from '../components/layout/BottomNav'
 import { ChapterMapCard } from '../features/chapters/ChapterMapCard'
@@ -17,8 +19,22 @@ import { Leaderboard } from '../features/ranked/Leaderboard'
 import { activeStage, categories, dailyModes, duel, leaderboard, mapNodes, player } from '../theme/content'
 
 export function Home() {
+  const telegram = useTelegram()
+  const me = useMe(telegram)
   const fallbackNodes = useMemo(() => mapNodes, [])
   const chapterMap = useChapterMap('path-of-scholar', fallbackNodes)
+  const currentPlayer = useMemo(() => {
+    const profile = me.profile
+    if (!profile) {
+      return player
+    }
+
+    const displayName = [profile.firstName, profile.lastName].filter(Boolean).join(' ').trim()
+    return {
+      ...player,
+      name: displayName || profile.username || player.name
+    }
+  }, [me.profile])
   const [nodeSession, setNodeSession] = useState<ChapterNodeSession | null>(null)
   const [isStartingNode, setIsStartingNode] = useState(false)
 
@@ -35,9 +51,9 @@ export function Home() {
   return (
     <main className="min-h-screen px-3 pb-28 pt-[calc(16px+env(safe-area-inset-top))] text-arena-ivory sm:px-5 md:pb-8">
       <div className="mx-auto max-w-6xl space-y-4">
-        <AppHeader player={player} />
+        <AppHeader player={currentPlayer} />
 
-        <RatingCard player={player} />
+        <RatingCard player={currentPlayer} />
         <CategoryStrip categories={categories} />
 
         <div className="grid gap-4 lg:grid-cols-[1.05fr_.95fr]">
@@ -58,7 +74,7 @@ export function Home() {
           <DuelCard duel={duel} />
           <div className="space-y-4">
             <Leaderboard rows={leaderboard} />
-            <ProfileCard player={player} />
+            <ProfileCard player={currentPlayer} />
           </div>
         </div>
 

@@ -1,5 +1,6 @@
 import type {
   ChapterMapResponse,
+  QuizAnswerResult,
   ChapterNodeSession,
   ChapterNodeStatus,
   ChapterNodeSummary,
@@ -138,6 +139,34 @@ export async function startChapterNode(chapterSlug: string, nodeId: number, sign
   return response.json() as Promise<ChapterNodeSession>
 }
 
+export async function submitQuizAnswer(
+  sessionId: string,
+  questionId: string,
+  optionId: string,
+  signal?: AbortSignal
+): Promise<QuizAnswerResult> {
+  const baseUrl = getApiBaseUrl()
+
+  if (!baseUrl) {
+    return fallbackAnswerResult(questionId, optionId)
+  }
+
+  const response = await fetch(`${baseUrl}/api/quiz/sessions/${sessionId}/answer`, {
+    method: 'POST',
+    signal,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ questionId, optionId })
+  })
+
+  if (!response.ok) {
+    throw new Error(`Answer request failed: ${response.status}`)
+  }
+
+  return response.json() as Promise<QuizAnswerResult>
+}
+
 function mapChapterNodeStatus(status: ChapterMapResponse['nodes'][number]['status']): ChapterNodeStatus {
   if (status === 'MASTERED' || status === 'COMPLETED') {
     return 'done'
@@ -168,9 +197,7 @@ function fallbackNodeSession(chapterSlug: string, nodeId: number): ChapterNodeSe
           { id: 'b', text: 'Нума Помпилий' },
           { id: 'c', text: 'Тарквиний Гордый' },
           { id: 'd', text: 'Сервий Туллий' }
-        ],
-        correctOptionId: 'a',
-        explanation: 'Римская традиция связывает основание города с Ромулом.'
+        ]
       },
       {
         id: 'local-q-2',
@@ -180,10 +207,39 @@ function fallbackNodeSession(chapterSlug: string, nodeId: number): ChapterNodeSe
         options: [
           { id: 'a', text: 'Верно' },
           { id: 'b', text: 'Неверно' }
-        ],
-        correctOptionId: 'a',
-        explanation: 'Это свойство объясняет, почему лед образуется сверху, а не со дна.'
+        ]
       }
     ]
+  }
+}
+
+function fallbackAnswerResult(questionId: string, optionId: string): QuizAnswerResult {
+  const answers: Record<string, { correctOptionId: string; explanation: string }> = {
+    'local-q-1': {
+      correctOptionId: 'a',
+      explanation: 'Римская традиция связывает основание города с Ромулом.'
+    },
+    'local-q-2': {
+      correctOptionId: 'a',
+      explanation: 'Это свойство объясняет, почему лед образуется сверху, а не со дна.'
+    }
+  }
+  const answer = answers[questionId] ?? {
+    correctOptionId: 'a',
+    explanation: 'Ответ принят.'
+  }
+  const correct = optionId === answer.correctOptionId
+
+  return {
+    questionId,
+    selectedOptionId: optionId,
+    correctOptionId: answer.correctOptionId,
+    correct,
+    alreadyAnswered: false,
+    explanation: answer.explanation,
+    correctAnswers: correct ? 1 : 0,
+    answeredQuestions: 1,
+    totalQuestions: 2,
+    stars: correct ? 1 : 0
   }
 }
