@@ -5,6 +5,10 @@ spring:
   application:
     name: brainarena-api
 
+brainarena:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:*}
+
 management:
   endpoints:
     web:

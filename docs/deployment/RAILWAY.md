@@ -87,6 +87,12 @@ Root Directory: /
 Dockerfile Path: infra/docker/api.Dockerfile
 ```
 
+Для CLI-деплоя из монорепозитория сервису нужно задать переменную Railway:
+
+```text
+RAILWAY_DOCKERFILE_PATH=/infra/docker/api.Dockerfile
+```
+
 Variables:
 
 ```text
@@ -125,6 +131,12 @@ Telegram Bot entrypoint: `/start`, deep links, WebApp button, result sharing, St
 ```text
 Root Directory: /
 Dockerfile Path: infra/docker/bot.Dockerfile
+```
+
+Для CLI-деплоя из монорепозитория сервису нужно задать переменную Railway:
+
+```text
+RAILWAY_DOCKERFILE_PATH=/infra/docker/bot.Dockerfile
 ```
 
 Variables:

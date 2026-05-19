@@ -82,3 +82,21 @@ export type PublicConfig = {
   telegramMiniApp: boolean
   generatedAt: string
 }
+
+export type ChapterMapResponse = {
+  slug: string
+  title: string
+  maxStars: number
+  earnedStars: number
+  nodes: ChapterMapNodeResponse[]
+}
+
+export type ChapterMapNodeResponse = {
+  id: number
+  title: string
+  subtitle: string
+  stars: number
+  status: 'MASTERED' | 'COMPLETED' | 'IN_PROGRESS' | 'LOCKED'
+  positionX: number
+  positionY: number
+}

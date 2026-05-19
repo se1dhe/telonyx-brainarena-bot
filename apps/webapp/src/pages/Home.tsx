@@ -1,4 +1,6 @@
 import { Search } from 'lucide-react'
+import { useMemo } from 'react'
+import { useChapterMap } from '../api/useChapterMap'
 import { AppHeader } from '../components/layout/AppHeader'
 import { BottomNav } from '../components/layout/BottomNav'
 import { ChapterMapCard } from '../features/chapters/ChapterMapCard'
@@ -12,6 +14,9 @@ import { Leaderboard } from '../features/ranked/Leaderboard'
 import { activeStage, categories, dailyModes, duel, leaderboard, mapNodes, player } from '../theme/content'
 
 export function Home() {
+  const fallbackNodes = useMemo(() => mapNodes, [])
+  const chapterMap = useChapterMap('path-of-scholar', fallbackNodes)
+
   return (
     <main className="min-h-screen px-3 pb-28 pt-[calc(16px+env(safe-area-inset-top))] text-arena-ivory sm:px-5 md:pb-8">
       <div className="mx-auto max-w-6xl space-y-4">
@@ -21,7 +26,7 @@ export function Home() {
         <CategoryStrip categories={categories} />
 
         <div className="grid gap-4 lg:grid-cols-[1.05fr_.95fr]">
-          <ChapterMapCard nodes={mapNodes} />
+          <ChapterMapCard nodes={chapterMap.nodes} />
           <div className="space-y-4">
             <StageCard stage={activeStage} />
             <DailyModes modes={dailyModes} />

@@ -14,3 +14,10 @@
 - Fixed `apps/webapp/Dockerfile` so Railway can deploy the webapp from `apps/webapp` as the service root.
 - Copied `vite.config.ts` into the webapp runtime image so `vite preview` keeps Railway `allowedHosts`.
 - Removed the obsolete Railway service `brainarena-web` after `brainarena-webapp` became the canonical web service.
+- Removed the stale root Railway config that forced Java services through `npm run build`.
+- Configured `brainarena-api` and `brainarena-bot` Railway services to deploy with `RAILWAY_DOCKERFILE_PATH`.
+- Verified the live API health endpoint and public config endpoint on Railway.
+- Added configurable API CORS for the Railway webapp domain.
+- Added a minimal Telegram long-polling bot runner with `/start` and a Mini App launch button.
+- Connected the webapp chapter map to the live API with a local fallback for offline/dev mode.
+- Deployed the updated webapp and verified the live mobile viewport in browser automation.

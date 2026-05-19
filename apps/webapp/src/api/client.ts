@@ -1,4 +1,4 @@
-import type { PublicConfig } from './contracts'
+import type { ChapterMapResponse, ChapterNodeStatus, ChapterNodeSummary, PublicConfig } from './contracts'
 
 const fallbackConfig: PublicConfig = {
   app: 'Brain Arena',
@@ -25,4 +25,42 @@ export async function fetchPublicConfig(signal?: AbortSignal): Promise<PublicCon
   }
 
   return response.json() as Promise<PublicConfig>
+}
+
+export async function fetchChapterMap(chapterSlug: string, signal?: AbortSignal): Promise<ChapterNodeSummary[]> {
+  const baseUrl = getApiBaseUrl()
+
+  if (!baseUrl) {
+    return []
+  }
+
+  const response = await fetch(`${baseUrl}/api/chapters/${chapterSlug}/map`, { signal })
+
+  if (!response.ok) {
+    throw new Error(`Chapter map request failed: ${response.status}`)
+  }
+
+  const map = (await response.json()) as ChapterMapResponse
+  return map.nodes.map((node) => ({
+    id: node.id,
+    title: node.title,
+    subtitle: node.subtitle,
+    stars: node.stars,
+    status: mapChapterNodeStatus(node.status),
+    x: node.positionX,
+    y: node.positionY,
+    types: []
+  }))
+}
+
+function mapChapterNodeStatus(status: ChapterMapResponse['nodes'][number]['status']): ChapterNodeStatus {
+  if (status === 'MASTERED' || status === 'COMPLETED') {
+    return 'done'
+  }
+
+  if (status === 'IN_PROGRESS') {
+    return 'active'
+  }
+
+  return 'locked'
 }

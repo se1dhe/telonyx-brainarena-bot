@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: brainarena-bot
+  main:
+    web-application-type: none
+
+brainarena:
+  telegram:
+    bot-token: ${TELEGRAM_BOT_TOKEN:}
+    bot-username: ${TELEGRAM_BOT_USERNAME:iq_arenabot}
+    webapp-url: ${TELEGRAM_WEBAPP_URL:}
