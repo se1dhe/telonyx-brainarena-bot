@@ -149,6 +149,24 @@ Header: X-Telegram-Init-Data: <Telegram WebApp initData>
 implementation project(':packages:persistence')
 ```
 
+`packages/persistence` уже подключает Spring dependency management и зависит от:
+
+```text
+packages:common
+packages:domain
+packages:security
+spring-boot-starter-data-jpa
+flyway-core
+postgresql
+```
+
+Это исправляет Railway/Docker build error, где Gradle не мог найти версии для:
+
+```text
+org.springframework.boot:spring-boot-starter-data-jpa
+org.flywaydb:flyway-core
+```
+
 `application.yml` уже содержит базовую настройку:
 
 ```text
@@ -322,7 +340,10 @@ Redis
    - добавлена миграция `users` + `telegram_accounts`;
    - добавлены `UserEntity`, `TelegramAccountEntity`, `UserIdentityService`;
    - `/api/me` теперь делает upsert Telegram user в БД.
-4. Принято правило дальнейшей работы: новый код пушить прямо в `main`, без создания дополнительных веток и PR.
+4. Исправлена сборка `packages:persistence`:
+   - добавлен `io.spring.dependency-management`;
+   - добавлена зависимость на `packages:security`.
+5. Принято правило дальнейшей работы: новый код пушить прямо в `main`, без создания дополнительных веток и PR.
 
 ---
 
