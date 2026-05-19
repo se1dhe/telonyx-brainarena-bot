@@ -10,8 +10,17 @@ import {
   Sigma,
   Star
 } from 'lucide-react'
+import type {
+  ActiveStageSummary,
+  CategorySummary,
+  ChapterNodeSummary,
+  DailyMode,
+  DuelPreview,
+  LeaderboardRow,
+  PlayerSummary
+} from '../api/contracts'
 
-export const player = {
+export const player: PlayerSummary = {
   name: 'Интеллектор',
   title: 'Стратег',
   league: 'IV',
@@ -23,7 +32,7 @@ export const player = {
   energy: 18
 }
 
-export const categories = [
+export const categories: CategorySummary[] = [
   { title: 'Общие знания', icon: Landmark, active: true, rating: 2367 },
   { title: 'География', icon: Globe2, rating: 2210 },
   { title: 'Наука', icon: Atom, rating: 2184 },
@@ -32,7 +41,7 @@ export const categories = [
   { title: 'Логика', icon: Sigma, rating: 2321 }
 ]
 
-export const mapNodes = [
+export const mapNodes: ChapterNodeSummary[] = [
   { id: 1, title: 'Форум', subtitle: '15 вопросов', stars: 3, status: 'done', x: 16, y: 74, types: ['варианты', 'true/false', 'картинка'] },
   { id: 2, title: 'Акведук', subtitle: '18 вопросов', stars: 2, status: 'done', x: 42, y: 52, types: ['география', 'порядок', 'фильм'] },
   { id: 3, title: 'Библиотека', subtitle: '20 вопросов', stars: 1, status: 'active', x: 68, y: 32, types: ['мелодия', 'наука', 'логика'] },
@@ -40,7 +49,7 @@ export const mapNodes = [
   { id: 5, title: 'Колизей', subtitle: '25 вопросов', stars: 0, status: 'locked', x: 56, y: 82, types: ['PvP', 'скорость', 'финал'] }
 ]
 
-export const activeStage = {
+export const activeStage: ActiveStageSummary = {
   title: 'Библиотека',
   subtitle: 'Точка 3 · Общие знания',
   questions: 20,
@@ -56,7 +65,7 @@ export const activeStage = {
   ]
 }
 
-export const duel = {
+export const duel: DuelPreview = {
   round: 1,
   timer: '00:18',
   score: '0 : 0',
@@ -66,7 +75,7 @@ export const duel = {
   answers: ['Фтор', 'Кислород', 'Хлор', 'Азот']
 }
 
-export const leaderboard = [
+export const leaderboard: LeaderboardRow[] = [
   { place: 1, name: 'Менталист', rating: 2784 },
   { place: 2, name: 'Архимед', rating: 2610 },
   { place: 3, name: 'Логос', rating: 2486 },
@@ -74,7 +83,7 @@ export const leaderboard = [
   { place: 5, name: 'Мыслитель', rating: 2301 }
 ]
 
-export const dailyModes = [
+export const dailyModes: DailyMode[] = [
   { title: 'Вопрос дня', reward: '+1 звезда', progress: 'готово' },
   { title: 'Спринт 7', reward: '+25 IQ', progress: '4/7' },
   { title: 'Реванш', reward: '+18 MMR', progress: '1 вызов' }

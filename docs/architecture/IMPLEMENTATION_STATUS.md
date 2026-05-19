@@ -51,6 +51,11 @@ apps/webapp
 - lucide-react;
 - Roman Temple визуальный стиль;
 - стартовый Home screen;
+- feature-разбиение Home на `features/home`, `features/chapters`, `features/daily`, `features/pvp`, `features/ranked`, `features/profile`;
+- typed contracts для текущих mock/API-shape;
+- Telegram WebApp wrapper с browser fallback;
+- TelegramProvider;
+- API client skeleton для `GET /api/public/config`;
 - карта прохождения главы;
 - mock-прогресс главы `6 / 15 ★`;
 - категории;
@@ -204,10 +209,7 @@ docs/deployment/RAILWAY.md
 
 Пока не реализовано:
 
-- нормальное разбиение `Home.tsx` на feature-компоненты;
-- Telegram WebApp SDK wrapper;
-- TelegramProvider;
-- API client;
+- `components/temple` для общих UI-компонентов;
 - loading/error/empty states для реальных запросов;
 - routing между Home / Chapter / PvP / Ranked / Profile;
 - подключение к backend;

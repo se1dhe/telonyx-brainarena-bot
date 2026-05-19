@@ -140,18 +140,18 @@ MVP-задачи:
 
 ### Sprint Frontend 1
 
-- перенести `App.tsx` в `src/app/App.tsx`;
-- разбить `Home.tsx` на компоненты;
-- создать `features/chapters` и вынести карту главы;
-- создать `features/pvp` и вынести DuelCard;
-- создать `features/ranked` и вынести Leaderboard;
-- создать `components/temple` для общих UI-компонентов;
-- добавить typed mock contracts.
+- [x] перенести `App.tsx` в `src/app/App.tsx`;
+- [x] разбить `Home.tsx` на компоненты;
+- [x] создать `features/chapters` и вынести карту главы;
+- [x] создать `features/pvp` и вынести DuelCard;
+- [x] создать `features/ranked` и вынести Leaderboard;
+- [ ] создать `components/temple` для общих UI-компонентов;
+- [x] добавить typed mock contracts.
 
 ### Sprint Frontend 2
 
-- добавить Telegram WebApp wrapper;
-- добавить API client;
+- [x] добавить Telegram WebApp wrapper;
+- [x] добавить API client;
 - добавить loading/error states;
 - подключить `/api/public/config`;
 - подготовить авторизацию через Telegram initData.
