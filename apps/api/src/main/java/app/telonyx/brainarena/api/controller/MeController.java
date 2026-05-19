@@ -1,5 +1,7 @@
 package app.telonyx.brainarena.api.controller;
 
+import app.telonyx.brainarena.persistence.user.TelegramAccountEntity;
+import app.telonyx.brainarena.persistence.user.UserIdentityService;
 import app.telonyx.brainarena.security.telegram.TelegramAuthResult;
 import app.telonyx.brainarena.security.telegram.TelegramInitDataValidator;
 import app.telonyx.brainarena.security.telegram.TelegramUser;
@@ -17,9 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/me")
 public class MeController {
     private final TelegramInitDataValidator validator;
+    private final UserIdentityService userIdentityService;
 
-    public MeController(TelegramInitDataValidator validator) {
+    public MeController(TelegramInitDataValidator validator, UserIdentityService userIdentityService) {
         this.validator = validator;
+        this.userIdentityService = userIdentityService;
     }
 
     @GetMapping
@@ -31,12 +35,16 @@ public class MeController {
         }
 
         TelegramUser user = result.user();
+        TelegramAccountEntity account = userIdentityService.upsertTelegramUser(user);
+
         Map<String, Object> response = new LinkedHashMap<>();
+        response.put("userId", account.getUser().getId());
         response.put("telegramId", user.id());
         response.put("username", user.username());
         response.put("firstName", user.firstName());
         response.put("lastName", user.lastName());
         response.put("photoUrl", user.photoUrl());
+        response.put("displayName", account.getUser().getDisplayName());
         response.put("authDate", result.authDate().toString());
         return ResponseEntity.ok(response);
     }
