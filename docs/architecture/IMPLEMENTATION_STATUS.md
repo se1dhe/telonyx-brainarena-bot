@@ -177,6 +177,27 @@ spring.jpa.hibernate.ddl-auto=validate
 spring.flyway.enabled=true
 ```
 
+Railway `DATABASE_URL` теперь поддерживается автоматически через:
+
+```text
+apps/api/src/main/java/app/telonyx/brainarena/api/config/RailwayDatabaseUrlEnvironmentPostProcessor.java
+apps/api/src/main/resources/META-INF/spring.factories
+```
+
+Он конвертирует Railway URL вида:
+
+```text
+postgresql://user:password@host:port/database
+```
+
+в JDBC URL вида:
+
+```text
+jdbc:postgresql://host:port/database
+```
+
+`application.yml` больше не подставляет `DATABASE_URL` напрямую в `spring.datasource.url`, чтобы Spring/Hikari не падал с ошибкой `URL must start with 'jdbc'`.
+
 Добавлена первая миграция:
 
 ```text
@@ -342,26 +363,28 @@ Redis
    - `/api/me` теперь делает upsert Telegram user в БД.
 4. Исправлена сборка `packages:persistence`:
    - добавлен `io.spring.dependency-management`;
-   - добавлена зависимость на `packages:security`.
-5. Принято правило дальнейшей работы: новый код пушить прямо в `main`, без создания дополнительных веток и PR.
+   - добавлена зависимость на `packages:security`;
+   - добавлен явный импорт Spring Boot BOM.
+5. Исправлен runtime crash Railway API:
+   - добавлен конвертер Railway `DATABASE_URL` в JDBC datasource properties;
+   - `application.yml` больше не использует `DATABASE_URL` напрямую как `spring.datasource.url`.
+6. Принято правило дальнейшей работы: новый код пушить прямо в `main`, без создания дополнительных веток и PR.
 
 ---
 
 ## 5. Ближайший порядок для рабочего MVP
 
-### Step 1 — проверить сборку
+### Step 1 — проверить сборку и старт API
 
 ```bash
-cd apps/webapp
-npm ci
-npm run build
+./gradlew :apps:api:bootJar --no-daemon
 ```
 
-```bash
-./gradlew clean build
-```
+В Railway API должен пройти дальше ошибки:
 
-Если сборка падает — сначала исправить compile/runtime ошибки.
+```text
+URL must start with 'jdbc'
+```
 
 ---
 
