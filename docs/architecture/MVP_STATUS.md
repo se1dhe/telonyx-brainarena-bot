@@ -17,6 +17,7 @@
 - Home подключён к `useMe`: в Telegram отображается имя реального пользователя.
 - Карта главы берёт данные из backend API.
 - Активная точка карты открывает playable quiz panel.
+- Курсы, главы, точки, вопросы и варианты читаются из PostgreSQL seed.
 - Ответы больше не проверяются на клиенте локально для live API.
 - После завершения точки показывается result panel со звёздами и возвратом к карте.
 - В Telegram Mini App карта запрашивается с initData и может показывать сохранённый прогресс пользователя.
@@ -48,9 +49,11 @@
 - Добавлена миграция `users` и `telegram_accounts`.
 - Добавлена миграция `quiz_sessions` и `quiz_answers`.
 - Добавлена миграция `user_node_progress`.
+- Добавлена миграция content catalog: `courses`, `chapters`, `chapter_nodes`, `questions`, `question_options`.
 - Добавлены JPA entities и `UserIdentityService`.
 - Добавлен `QuizSessionPersistenceService`.
 - Добавлен `UserProgressPersistenceService`.
+- Добавлен `ContentCatalogPersistenceService`.
 
 ### Telegram Bot
 
@@ -67,8 +70,7 @@
 
 ## Ещё не готово для нормального MVP
 
-- Вопросы и главы пока не перенесены в PostgreSQL.
-- Нет таблиц `courses`, `chapters`, `chapter_nodes`, `questions`, `question_options`.
+- Content catalog пока покрывает только первый seeded маршрут.
 - Нет unlock logic по звёздам из БД.
 - Нет daily ritual API.
 - Нет async PvP duel lifecycle.
@@ -79,9 +81,8 @@
 
 ## Следующий порядок разработки
 
-1. Перенести контент глав и вопросов в Flyway seed.
-2. Добавить unlock logic и честные состояния `available/locked/completed/mastered`.
-3. Добавить daily ritual поверх того же quiz session engine.
-4. Добавить mistake review и personal library shell.
-5. Добавить Telegram challenge links и async PvP MVP.
-6. После этого подключать Stars invoice skeleton.
+1. Добавить unlock logic и честные состояния `available/locked/completed/mastered`.
+2. Добавить daily ritual поверх того же quiz session engine.
+3. Добавить mistake review и personal library shell.
+4. Добавить Telegram challenge links и async PvP MVP.
+5. После этого подключать Stars invoice skeleton.

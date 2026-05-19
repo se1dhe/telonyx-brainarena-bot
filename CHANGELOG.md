@@ -37,3 +37,4 @@
 - Added explicit JPA entity scanning for persistence package entities loaded from module jars.
 - Added a quiz result state in the Mini App after finishing a chapter node.
 - Added persisted per-user chapter node progress and wired the active map node to Telegram-authenticated sessions.
+- Added PostgreSQL content catalog tables and seed data for courses, chapters, chapter nodes, questions, and options.

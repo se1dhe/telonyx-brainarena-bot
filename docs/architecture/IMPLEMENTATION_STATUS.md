@@ -332,6 +332,7 @@ Redis
 - persisted chapter nodes;
 - persisted questions;
 - persisted question options;
+- расширение content seed за пределы первого маршрута;
 - daily ritual API;
 - PvP async duel API;
 - ranked profile API;
@@ -389,28 +390,14 @@ Redis
    - finish endpoint возвращает результат и звёзды.
 8. Добавлены `quiz_sessions`, `quiz_answers` и `user_node_progress`.
 9. Mini App показывает result panel после завершения точки и обновляет карту после возврата.
+10. Добавлен content catalog seed для `courses`, `chapters`, `chapter_nodes`, `questions`, `question_options`.
+11. `ChapterController` читает каталог из PostgreSQL через `ContentCatalogPersistenceService`.
 
 ---
 
 ## 5. Ближайший порядок для рабочего MVP
 
-### Step 1 — persisted content
-
-Добавить таблицы и seed:
-
-```text
-courses
-chapters
-chapter_nodes
-questions
-question_options
-```
-
-Переключить `ChapterController` с in-memory fixtures на persistence service.
-
----
-
-### Step 2 — unlock logic
+### Step 1 — unlock logic
 
 Подключить статусы `available/locked/completed/mastered` к звёздам пользователя, а не к статичным fixtures.
 
