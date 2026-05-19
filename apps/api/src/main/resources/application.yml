@@ -5,9 +5,9 @@ spring:
   application:
     name: brainarena-api
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/brainarena}
-    username: ${POSTGRES_USER:brainarena}
-    password: ${POSTGRES_PASSWORD:brainarena}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/brainarena}
+    username: ${SPRING_DATASOURCE_USERNAME:${POSTGRES_USER:brainarena}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${POSTGRES_PASSWORD:brainarena}}
   jpa:
     hibernate:
       ddl-auto: validate
