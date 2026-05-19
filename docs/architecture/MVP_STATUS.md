@@ -33,6 +33,7 @@
   - `POST /api/quiz/sessions/{sessionId}/answer`
   - `POST /api/quiz/sessions/{sessionId}/finish`
 - Start response не отдаёт `correctOptionId`; правильный ответ появляется только после submit.
+- Quiz session и submitted answers сохраняются в PostgreSQL.
 - Есть Telegram initData validation.
 - Есть `GET /api/me` с backend validation и upsert Telegram user.
 
@@ -42,7 +43,9 @@
 - Flyway закреплён на версии с поддержкой Railway PostgreSQL 18.
 - Railway `DATABASE_URL` конвертируется в JDBC properties.
 - Добавлена миграция `users` и `telegram_accounts`.
+- Добавлена миграция `quiz_sessions` и `quiz_answers`.
 - Добавлены JPA entities и `UserIdentityService`.
+- Добавлен `QuizSessionPersistenceService`.
 
 ### Telegram Bot
 
@@ -60,7 +63,6 @@
 ## Ещё не готово для нормального MVP
 
 - Вопросы, главы и прогресс пока не перенесены в PostgreSQL.
-- Quiz sessions пока runtime-only, без восстановления после рестарта.
 - Нет таблиц `courses`, `chapters`, `chapter_nodes`, `questions`, `question_options`.
 - Нет сохранения результата прохождения точки.
 - Нет unlock logic по звёздам из БД.

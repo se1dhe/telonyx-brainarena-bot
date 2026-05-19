@@ -1,13 +1,10 @@
 package app.telonyx.brainarena.api.controller;
 
 import app.telonyx.brainarena.domain.quiz.ResultCalculator;
-import java.util.ArrayList;
-import java.util.HashSet;
+import app.telonyx.brainarena.persistence.quiz.QuizSessionEntity;
+import app.telonyx.brainarena.persistence.quiz.QuizSessionPersistenceService;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,7 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api")
 public class ChapterController {
-    private final Map<String, NodeSessionState> sessions = new ConcurrentHashMap<>();
+    private final QuizSessionPersistenceService quizSessionPersistenceService;
+
+    public ChapterController(QuizSessionPersistenceService quizSessionPersistenceService) {
+        this.quizSessionPersistenceService = quizSessionPersistenceService;
+    }
 
     @GetMapping("/courses")
     public List<CourseResponse> courses() {
@@ -58,7 +59,7 @@ public class ChapterController {
     public NodeSessionResponse startNode(@PathVariable String chapterSlug, @PathVariable int nodeId) {
         String sessionId = "node-" + chapterSlug + "-" + nodeId + "-" + UUID.randomUUID();
         List<QuizQuestionDefinition> questions = firstNodeQuestions();
-        sessions.put(sessionId, new NodeSessionState(chapterSlug, nodeId, questions));
+        quizSessionPersistenceService.startSession(sessionId, chapterSlug, nodeId, questions.size());
 
         return new NodeSessionResponse(
             sessionId,
@@ -75,49 +76,53 @@ public class ChapterController {
         @PathVariable String sessionId,
         @RequestBody QuizAnswerRequest request
     ) {
-        NodeSessionState session = sessions.get(sessionId);
-        if (session == null) {
-            return QuizAnswerResponse.missingSession(request.questionId(), request.optionId());
-        }
-
-        QuizQuestionDefinition question = session.findQuestion(request.questionId());
+        QuizQuestionDefinition question = findQuestion(request.questionId());
         if (question == null) {
-            return QuizAnswerResponse.missingQuestion(request.questionId(), request.optionId(), session.correctAnswers(), session.answeredQuestions(), session.totalQuestions());
+            return QuizAnswerResponse.missingQuestion(request.questionId(), request.optionId());
         }
 
-        boolean alreadyAnswered = session.isAnswered(question.id());
         boolean correct = question.correctOptionId().equals(request.optionId());
-        if (!alreadyAnswered) {
-            session.markAnswered(question.id(), correct);
-        }
-
-        return new QuizAnswerResponse(
+        QuizSessionPersistenceService.AnswerRecordResult record = quizSessionPersistenceService.recordAnswer(
+            sessionId,
             question.id(),
             request.optionId(),
             question.correctOptionId(),
-            correct,
-            alreadyAnswered,
+            correct
+        );
+        if (record.missingSessionResult()) {
+            return QuizAnswerResponse.missingSession(request.questionId(), request.optionId());
+        }
+
+        QuizSessionEntity session = record.session();
+        int answeredQuestions = quizSessionPersistenceService.answeredQuestions(sessionId);
+        return new QuizAnswerResponse(
+            question.id(),
+            record.answer().getSelectedOptionId(),
+            record.answer().getCorrectOptionId(),
+            record.answer().isCorrect(),
+            record.alreadyAnswered(),
             question.explanation(),
-            session.correctAnswers(),
-            session.answeredQuestions(),
-            session.totalQuestions(),
-            ResultCalculator.calculateStars(session.correctAnswers(), session.totalQuestions())
+            session.getCorrectAnswers(),
+            answeredQuestions,
+            session.getTotalQuestions(),
+            ResultCalculator.calculateStars(session.getCorrectAnswers(), session.getTotalQuestions())
         );
     }
 
     @PostMapping("/quiz/sessions/{sessionId}/finish")
     public QuizResultResponse finishSession(@PathVariable String sessionId) {
-        NodeSessionState session = sessions.get(sessionId);
+        QuizSessionEntity session = quizSessionPersistenceService.finishSession(sessionId);
         if (session == null) {
             return new QuizResultResponse(sessionId, 0, 0, 0, false);
         }
 
+        int answeredQuestions = quizSessionPersistenceService.answeredQuestions(sessionId);
         return new QuizResultResponse(
             sessionId,
-            session.correctAnswers(),
-            session.totalQuestions(),
-            ResultCalculator.calculateStars(session.correctAnswers(), session.totalQuestions()),
-            session.answeredQuestions() >= session.totalQuestions()
+            session.getCorrectAnswers(),
+            session.getTotalQuestions(),
+            ResultCalculator.calculateStars(session.getCorrectAnswers(), session.getTotalQuestions()),
+            answeredQuestions >= session.getTotalQuestions()
         );
     }
 
@@ -195,8 +200,8 @@ public class ChapterController {
             return new QuizAnswerResponse(questionId, optionId, null, false, false, "Сессия уже завершена. Начни точку заново.", 0, 0, 0, 0);
         }
 
-        static QuizAnswerResponse missingQuestion(String questionId, String optionId, int correctAnswers, int answeredQuestions, int totalQuestions) {
-            return new QuizAnswerResponse(questionId, optionId, null, false, false, "Вопрос не найден в этой точке.", correctAnswers, answeredQuestions, totalQuestions, 0);
+        static QuizAnswerResponse missingQuestion(String questionId, String optionId) {
+            return new QuizAnswerResponse(questionId, optionId, null, false, false, "Вопрос не найден в этой точке.", 0, 0, 0, 0);
         }
     }
 
@@ -282,6 +287,13 @@ public class ChapterController {
         );
     }
 
+    private QuizQuestionDefinition findQuestion(String questionId) {
+        return firstNodeQuestions().stream()
+            .filter(question -> question.id().equals(questionId))
+            .findFirst()
+            .orElse(null);
+    }
+
     private record QuizQuestionDefinition(
         String id,
         String type,
@@ -296,46 +308,4 @@ public class ChapterController {
         }
     }
 
-    private static final class NodeSessionState {
-        private final String chapterSlug;
-        private final int nodeId;
-        private final List<QuizQuestionDefinition> questions;
-        private final Set<String> answeredQuestionIds = new HashSet<>();
-        private int correctAnswers;
-
-        private NodeSessionState(String chapterSlug, int nodeId, List<QuizQuestionDefinition> questions) {
-            this.chapterSlug = chapterSlug;
-            this.nodeId = nodeId;
-            this.questions = new ArrayList<>(questions);
-        }
-
-        QuizQuestionDefinition findQuestion(String questionId) {
-            return questions.stream()
-                .filter(question -> question.id().equals(questionId))
-                .findFirst()
-                .orElse(null);
-        }
-
-        boolean isAnswered(String questionId) {
-            return answeredQuestionIds.contains(questionId);
-        }
-
-        void markAnswered(String questionId, boolean correct) {
-            if (answeredQuestionIds.add(questionId) && correct) {
-                correctAnswers++;
-            }
-        }
-
-        int correctAnswers() {
-            return correctAnswers;
-        }
-
-        int answeredQuestions() {
-            return answeredQuestionIds.size();
-        }
-
-        int totalQuestions() {
-            return questions.size();
-        }
-    }
 }

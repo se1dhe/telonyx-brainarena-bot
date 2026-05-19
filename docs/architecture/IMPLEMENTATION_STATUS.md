@@ -89,7 +89,7 @@ Header: X-Telegram-Init-Data: <Telegram WebApp initData>
 
 `useMe(telegram)` безопасно возвращает guest state, если Mini App открыт вне Telegram или backend вернул `401`.
 
-Важно: `Home.tsx` ещё нужно подключить к `useMe`, чтобы UI показывал имя реального Telegram-пользователя.
+Важно: `Home.tsx` уже использует `useMe`; вне Telegram UI остаётся в guest/fallback состоянии.
 
 ---
 
@@ -117,6 +117,8 @@ POST /api/chapters/{chapterSlug}/nodes/{nodeId}/start
 POST /api/quiz/sessions/{sessionId}/answer
 POST /api/quiz/sessions/{sessionId}/finish
 ```
+
+Quiz session и submitted answers уже сохраняются через `packages:persistence`.
 
 Telegram auth slice:
 
@@ -214,12 +216,28 @@ users
 telegram_accounts
 ```
 
+Добавлена миграция quiz sessions:
+
+```text
+packages/persistence/src/main/resources/db/migration/V2__quiz_sessions_and_answers.sql
+```
+
+Она создаёт:
+
+```text
+quiz_sessions
+quiz_answers
+```
+
 Добавлены JPA-сущности и сервис:
 
 ```text
 packages/persistence/src/main/java/app/telonyx/brainarena/persistence/user/UserEntity.java
 packages/persistence/src/main/java/app/telonyx/brainarena/persistence/user/TelegramAccountEntity.java
 packages/persistence/src/main/java/app/telonyx/brainarena/persistence/user/UserIdentityService.java
+packages/persistence/src/main/java/app/telonyx/brainarena/persistence/quiz/QuizSessionEntity.java
+packages/persistence/src/main/java/app/telonyx/brainarena/persistence/quiz/QuizAnswerEntity.java
+packages/persistence/src/main/java/app/telonyx/brainarena/persistence/quiz/QuizSessionPersistenceService.java
 ```
 
 `UserIdentityService` делает upsert Telegram-пользователя через `EntityManager`.

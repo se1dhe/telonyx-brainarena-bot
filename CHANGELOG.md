@@ -31,3 +31,7 @@
 - Added `POST /api/quiz/sessions/{sessionId}/finish` for MVP result summaries.
 - Fixed Railway webapp CLI deploy mode after the service root directory moved to `apps/webapp`.
 - Upgraded Flyway dependencies in `packages:persistence` for Railway PostgreSQL 18 compatibility.
+- Added Flyway migration for persisted `quiz_sessions` and `quiz_answers`.
+- Added JPA entities and a persistence service for quiz sessions and submitted answers.
+- Changed quiz start/answer/finish flow to persist session state in PostgreSQL.
+- Added explicit JPA entity scanning for persistence package entities loaded from module jars.
