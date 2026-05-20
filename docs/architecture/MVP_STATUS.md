@@ -11,12 +11,15 @@
 - Roman Temple UI сохранён как основной стиль продукта.
 - Home screen разбит на feature-компоненты.
 - Есть карта прохождения главы.
+- WebApp разделён на табы `Карта`, `Арена`, `Топ`, `Профиль` без одной длинной ленты.
+- Категории отображаются горизонтальной каруселью.
+- Вопросы открываются при нажатии на доступную точку карты.
 - Есть категория, рейтинг, daily-блоки, PvP preview, leaderboard, profile.
 - WebApp runtime вызывает Telegram `ready()` и `expand()`.
 - Frontend умеет работать вне Telegram через fallback.
 - Home подключён к `useMe`: в Telegram отображается имя реального пользователя.
 - Карта главы берёт данные из backend API.
-- Активная точка карты открывает playable quiz panel.
+- Активная или уже доступная точка карты открывает playable quiz panel.
 - Курсы, главы, точки, вопросы и варианты читаются из PostgreSQL seed.
 - Ответы больше не проверяются на клиенте локально для live API.
 - После завершения точки показывается result panel со звёздами и возвратом к карте.
@@ -79,7 +82,7 @@
 - Нет ranked leaderboard из backend.
 - Нет Telegram deep links для challenge/rematch.
 - Нет Telegram Stars invoice skeleton.
-- Result screen обновляет карту после возврата, но visual unlock/progress economy ещё черновая.
+- Result screen обновляет карту после возврата, но reward economy ещё черновая.
 
 ## Следующий порядок разработки
 

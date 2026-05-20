@@ -318,6 +318,7 @@ Redis
 Пока не завершено:
 
 - полноценный routing между Home / Chapter / PvP / Ranked / Profile;
+- полноценный deep-link routing на уровне URL;
 - полноценные экраны Duel Result и Season Overview;
 - loading/error/empty states на всех feature-срезах.
 
@@ -394,6 +395,8 @@ Redis
 11. `ChapterController` читает каталог из PostgreSQL через `ContentCatalogPersistenceService`.
 12. Карточка активной точки в Mini App берётся из состояния карты, а не из статичного mock.
 13. Добавлен `POST /api/daily/ritual/start`; «Вопрос дня» запускает daily quiz session.
+14. Mini App переведён на tab shell: карта, арена, топ и профиль больше не складываются в одну длинную страницу.
+15. Категории стали горизонтальной каруселью, а вопросы открываются нажатием на доступную точку карты.
 
 ---
 

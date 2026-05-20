@@ -1,17 +1,15 @@
-import { Search } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { startChapterNode, startDailyRitual } from '../api/client'
-import type { ChapterNodeSession } from '../api/contracts'
+import type { ChapterNodeSession, ChapterNodeSummary } from '../api/contracts'
 import { useChapterMap } from '../api/useChapterMap'
 import { useMe } from '../api/useMe'
 import { useTelegram } from '../app/providers/TelegramProvider'
 import { AppHeader } from '../components/layout/AppHeader'
-import { BottomNav } from '../components/layout/BottomNav'
+import { BottomNav, type AppView } from '../components/layout/BottomNav'
 import { ChapterMapCard } from '../features/chapters/ChapterMapCard'
-import { StageCard } from '../features/chapters/StageCard'
 import { DailyModes } from '../features/daily/DailyModes'
 import { CategoryStrip } from '../features/home/CategoryStrip'
-import { RatingCard } from '../features/home/RatingCard'
 import { ProfileCard } from '../features/profile/ProfileCard'
 import { DuelCard } from '../features/pvp/DuelCard'
 import { QuizStagePanel } from '../features/quiz/QuizStagePanel'
@@ -21,6 +19,7 @@ import { activeStage, categories, dailyModes, duel, leaderboard, mapNodes, playe
 export function Home() {
   const telegram = useTelegram()
   const me = useMe(telegram)
+  const [activeView, setActiveView] = useState<AppView>('map')
   const fallbackNodes = useMemo(() => mapNodes, [])
   const chapterMap = useChapterMap('path-of-scholar', fallbackNodes, telegram.initData)
   const playableNode = useMemo(() => {
@@ -59,17 +58,18 @@ export function Home() {
     }
   }, [me.profile])
   const [nodeSession, setNodeSession] = useState<ChapterNodeSession | null>(null)
+  const [selectedNode, setSelectedNode] = useState<ChapterNodeSummary | null>(null)
   const [isStartingNode, setIsStartingNode] = useState(false)
   const [isStartingDaily, setIsStartingDaily] = useState(false)
 
-  async function handleStartNode() {
-    if (!playableNode) {
+  async function handleStartNode(node = selectedNode ?? playableNode) {
+    if (!node || node.status === 'locked') {
       return
     }
 
     setIsStartingNode(true)
     try {
-      const session = await startChapterNode('path-of-scholar', playableNode.id, telegram.initData)
+      const session = await startChapterNode('path-of-scholar', node.id, telegram.initData)
       setNodeSession(session)
     } finally {
       setIsStartingNode(false)
@@ -91,37 +91,73 @@ export function Home() {
     }
   }
 
+  function handleNodeSelect(node: ChapterNodeSummary) {
+    setSelectedNode(node)
+    void handleStartNode(node)
+  }
+
   return (
-    <main className="min-h-screen px-3 pb-28 pt-[calc(16px+env(safe-area-inset-top))] text-arena-ivory sm:px-5 md:pb-8">
-      <div className="mx-auto max-w-6xl space-y-4">
+    <main className="app-shell px-3 pt-[calc(12px+env(safe-area-inset-top))] text-arena-ivory sm:px-5">
+      <div className="mx-auto flex h-full max-w-4xl flex-col gap-3">
         <AppHeader player={currentPlayer} />
 
-        <RatingCard player={currentPlayer} />
-        <CategoryStrip categories={categories} />
+        <section className="app-viewport">
+          {activeView === 'map' && (
+            <div className="screen-stack">
+              <CategoryStrip categories={categories} />
+              <ChapterMapCard
+                nodes={chapterMap.nodes}
+                selectedNodeId={selectedNode?.id}
+                onNodeSelect={handleNodeSelect}
+              />
+              <div className="arena-card p-3">
+                <p className="arena-label">Текущая точка</p>
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-xl font-bold text-arena-ivory">{currentStage.title}</h2>
+                    <p className="text-sm text-arena-muted">{currentStage.best}</p>
+                  </div>
+                  <button className="arena-primary min-w-28 px-4" onClick={() => handleStartNode()} disabled={isStartingNode}>
+                    {isStartingNode ? 'Открываем' : 'Играть'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
-        <div className="grid gap-4 lg:grid-cols-[1.05fr_.95fr]">
-          <ChapterMapCard nodes={chapterMap.nodes} />
-          <div className="space-y-4">
-            <StageCard stage={currentStage} onStart={handleStartNode} isStarting={isStartingNode} />
-            {nodeSession && <QuizStagePanel session={nodeSession} onClose={closeQuizStage} />}
-            <DailyModes modes={dailyModes} onStartRitual={handleStartDailyRitual} isStartingRitual={isStartingDaily} />
+          {activeView === 'arena' && (
+            <div className="screen-stack">
+              <button className="arena-secondary w-full">Найти матч</button>
+              <DuelCard duel={duel} />
+            </div>
+          )}
+
+          {activeView === 'top' && (
+            <div className="screen-stack">
+              <Leaderboard rows={leaderboard} />
+            </div>
+          )}
+
+          {activeView === 'profile' && (
+            <div className="screen-stack">
+              <ProfileCard player={currentPlayer} />
+              <DailyModes modes={dailyModes} onStartRitual={handleStartDailyRitual} isStartingRitual={isStartingDaily} />
+            </div>
+          )}
+        </section>
+
+        {nodeSession && (
+          <div className="quiz-overlay">
+            <div className="quiz-sheet">
+              <button className="quiz-close" onClick={closeQuizStage} aria-label="Закрыть вопрос" type="button">
+                <X className="h-5 w-5" />
+              </button>
+              <QuizStagePanel session={nodeSession} onClose={closeQuizStage} />
+            </div>
           </div>
-        </div>
+        )}
 
-        <button className="arena-secondary w-full">
-          <Search className="h-5 w-5" />
-          Найти матч
-        </button>
-
-        <div className="grid gap-4 lg:grid-cols-[1.1fr_.9fr]">
-          <DuelCard duel={duel} />
-          <div className="space-y-4">
-            <Leaderboard rows={leaderboard} />
-            <ProfileCard player={currentPlayer} />
-          </div>
-        </div>
-
-        <BottomNav />
+        <BottomNav activeView={activeView} onChange={setActiveView} />
       </div>
     </main>
   )

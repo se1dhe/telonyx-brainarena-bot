@@ -39,3 +39,5 @@
 - Added persisted per-user chapter node progress and wired the active map node to Telegram-authenticated sessions.
 - Added PostgreSQL content catalog tables and seed data for courses, chapters, chapter nodes, questions, and options.
 - Added Daily Ritual start flow backed by the same server-authoritative quiz session engine.
+- Reworked Mini App into tabbed Telegram screens: map, arena, leaderboard, and profile no longer stack into one long scroll.
+- Changed category selection to a horizontal carousel and wired map nodes to open quiz sessions directly.

@@ -5,17 +5,23 @@ import { NodeStars } from './NodeStars'
 
 type ChapterMapCardProps = {
   nodes: ChapterNodeSummary[]
+  selectedNodeId?: number
+  onNodeSelect?: (node: ChapterNodeSummary) => void
 }
 
-export function ChapterMapCard({ nodes }: ChapterMapCardProps) {
+export function ChapterMapCard({ nodes, selectedNodeId, onNodeSelect }: ChapterMapCardProps) {
+  const earnedStars = nodes.reduce((sum, node) => sum + node.stars, 0)
+
   return (
-    <section className="arena-card relative overflow-hidden p-4">
+    <section className="arena-card map-card-shell relative overflow-hidden p-4">
       <div className="flex items-center justify-between">
         <div>
           <p className="arena-label">Карта прохождения</p>
           <h2 className="mt-1 text-2xl font-bold text-arena-ivory">Глава I · Путь знатока</h2>
         </div>
-        <div className="rounded-full border border-arena-blue/40 bg-arena-blue/10 px-3 py-1 text-sm font-bold text-arena-blue">6 / 15 ★</div>
+        <div className="rounded-full border border-arena-blue/40 bg-arena-blue/10 px-3 py-1 text-sm font-bold text-arena-blue">
+          {earnedStars} / 15 ★
+        </div>
       </div>
 
       <div className="map-surface mt-4">
@@ -29,8 +35,13 @@ export function ChapterMapCard({ nodes }: ChapterMapCardProps) {
             initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: node.id * 0.06 }}
-            className={node.status === 'active' ? 'map-node map-node-active' : node.status === 'locked' ? 'map-node map-node-locked' : 'map-node map-node-done'}
+            className={[
+              node.status === 'active' ? 'map-node map-node-active' : node.status === 'locked' ? 'map-node map-node-locked' : 'map-node map-node-done',
+              selectedNodeId === node.id ? 'map-node-selected' : ''
+            ].join(' ')}
             style={{ left: `${node.x}%`, top: `${node.y}%` }}
+            onClick={() => onNodeSelect?.(node)}
+            type="button"
           >
             <span className="text-lg font-bold">{node.id}</span>
             <span className="mt-1 flex gap-0.5">

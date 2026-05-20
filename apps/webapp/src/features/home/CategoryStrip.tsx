@@ -6,9 +6,12 @@ type CategoryStripProps = {
 
 export function CategoryStrip({ categories }: CategoryStripProps) {
   return (
-    <section className="arena-card p-4">
-      <p className="arena-label">Выбор категории</p>
-      <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
+    <section className="arena-card p-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="arena-label">Категории</p>
+        <span className="text-xs font-bold text-arena-muted">свайп</span>
+      </div>
+      <div className="category-carousel mt-3">
         {categories.map(({ title, icon: Icon, active }) => (
           <button key={title} className={active ? 'category-tile category-tile-active' : 'category-tile'}>
             <Icon className="mx-auto h-7 w-7" />
