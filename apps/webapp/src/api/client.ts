@@ -153,6 +153,26 @@ export async function startChapterNode(
   return response.json() as Promise<ChapterNodeSession>
 }
 
+export async function startDailyRitual(initData = '', signal?: AbortSignal): Promise<ChapterNodeSession> {
+  const baseUrl = getApiBaseUrl()
+
+  if (!baseUrl) {
+    return fallbackNodeSession('daily-ritual', 0)
+  }
+
+  const response = await fetch(`${baseUrl}/api/daily/ritual/start`, {
+    method: 'POST',
+    signal,
+    headers: telegramHeaders(initData)
+  })
+
+  if (!response.ok) {
+    throw new Error(`Daily ritual start request failed: ${response.status}`)
+  }
+
+  return response.json() as Promise<ChapterNodeSession>
+}
+
 export async function submitQuizAnswer(
   sessionId: string,
   questionId: string,

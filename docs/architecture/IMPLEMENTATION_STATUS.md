@@ -333,7 +333,7 @@ Redis
 - persisted questions;
 - persisted question options;
 - расширение content seed за пределы первого маршрута;
-- daily ritual API;
+- streak/reward economy для Daily Ritual;
 - PvP async duel API;
 - ranked profile API;
 - leaderboard API;
@@ -392,29 +392,20 @@ Redis
 9. Mini App показывает result panel после завершения точки и обновляет карту после возврата.
 10. Добавлен content catalog seed для `courses`, `chapters`, `chapter_nodes`, `questions`, `question_options`.
 11. `ChapterController` читает каталог из PostgreSQL через `ContentCatalogPersistenceService`.
+12. Карточка активной точки в Mini App берётся из состояния карты, а не из статичного mock.
+13. Добавлен `POST /api/daily/ritual/start`; «Вопрос дня» запускает daily quiz session.
 
 ---
 
 ## 5. Ближайший порядок для рабочего MVP
 
-### Step 1 — unlock logic
+### Step 1 — Daily Ritual economy
 
-Подключить статусы `available/locked/completed/mastered` к звёздам пользователя, а не к статичным fixtures.
-
----
-
-### Step 5 — Daily Ritual
-
-После quiz-session flow добавить daily режим:
-
-```text
-POST /api/quiz/daily/start
-GET  /api/quiz/daily/status
-```
+Добавить streak, reward grant и статус сегодняшнего ритуала.
 
 ---
 
-### Step 6 — PvP MVP
+### Step 2 — PvP MVP
 
 После server-authoritative quiz flow реализовать async duel:
 

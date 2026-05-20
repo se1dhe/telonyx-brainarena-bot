@@ -1,6 +1,6 @@
 import { Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { startChapterNode } from '../api/client'
+import { startChapterNode, startDailyRitual } from '../api/client'
 import type { ChapterNodeSession } from '../api/contracts'
 import { useChapterMap } from '../api/useChapterMap'
 import { useMe } from '../api/useMe'
@@ -23,6 +23,29 @@ export function Home() {
   const me = useMe(telegram)
   const fallbackNodes = useMemo(() => mapNodes, [])
   const chapterMap = useChapterMap('path-of-scholar', fallbackNodes, telegram.initData)
+  const playableNode = useMemo(() => {
+    return (
+      chapterMap.nodes.find((node) => node.status === 'active')
+      ?? chapterMap.nodes.find((node) => node.status !== 'locked')
+      ?? chapterMap.nodes[0]
+    )
+  }, [chapterMap.nodes])
+  const currentStage = useMemo(() => {
+    if (!playableNode) {
+      return activeStage
+    }
+
+    const questionCount = Number.parseInt(playableNode.subtitle, 10) || activeStage.questions
+    return {
+      ...activeStage,
+      title: playableNode.title,
+      subtitle: `Точка ${playableNode.id} · Общие знания`,
+      questions: questionCount,
+      completed: playableNode.stars > 0 ? Math.round((playableNode.stars / 3) * questionCount) : 0,
+      stars: playableNode.stars,
+      best: playableNode.stars > 0 ? `${playableNode.stars} / 3 звезды` : 'ещё нет'
+    }
+  }, [playableNode])
   const currentPlayer = useMemo(() => {
     const profile = me.profile
     if (!profile) {
@@ -37,11 +60,16 @@ export function Home() {
   }, [me.profile])
   const [nodeSession, setNodeSession] = useState<ChapterNodeSession | null>(null)
   const [isStartingNode, setIsStartingNode] = useState(false)
+  const [isStartingDaily, setIsStartingDaily] = useState(false)
 
   async function handleStartNode() {
+    if (!playableNode) {
+      return
+    }
+
     setIsStartingNode(true)
     try {
-      const session = await startChapterNode('path-of-scholar', 3, telegram.initData)
+      const session = await startChapterNode('path-of-scholar', playableNode.id, telegram.initData)
       setNodeSession(session)
     } finally {
       setIsStartingNode(false)
@@ -51,6 +79,16 @@ export function Home() {
   function closeQuizStage() {
     setNodeSession(null)
     chapterMap.refresh()
+  }
+
+  async function handleStartDailyRitual() {
+    setIsStartingDaily(true)
+    try {
+      const session = await startDailyRitual(telegram.initData)
+      setNodeSession(session)
+    } finally {
+      setIsStartingDaily(false)
+    }
   }
 
   return (
@@ -64,9 +102,9 @@ export function Home() {
         <div className="grid gap-4 lg:grid-cols-[1.05fr_.95fr]">
           <ChapterMapCard nodes={chapterMap.nodes} />
           <div className="space-y-4">
-            <StageCard stage={activeStage} onStart={handleStartNode} isStarting={isStartingNode} />
+            <StageCard stage={currentStage} onStart={handleStartNode} isStarting={isStartingNode} />
             {nodeSession && <QuizStagePanel session={nodeSession} onClose={closeQuizStage} />}
-            <DailyModes modes={dailyModes} />
+            <DailyModes modes={dailyModes} onStartRitual={handleStartDailyRitual} isStartingRitual={isStartingDaily} />
           </div>
         </div>
 

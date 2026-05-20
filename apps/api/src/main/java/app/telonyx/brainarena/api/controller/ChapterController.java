@@ -124,6 +124,32 @@ public class ChapterController {
         );
     }
 
+    @PostMapping("/daily/ritual/start")
+    public NodeSessionResponse startDailyRitual(@RequestHeader HttpHeaders headers) {
+        String sessionId = "daily-ritual-" + UUID.randomUUID();
+        List<QuizQuestionDefinition> questions = contentCatalogPersistenceService.dailyQuestions(3)
+            .stream()
+            .map(this::questionDefinition)
+            .toList();
+        quizSessionPersistenceService.startSession(
+            sessionId,
+            authenticatedUser(headers),
+            "daily-ritual",
+            0,
+            questions.size()
+        );
+
+        return new NodeSessionResponse(
+            sessionId,
+            "daily-ritual",
+            0,
+            "Ежедневный ритуал",
+            questions.size(),
+            questions.stream().map(QuizQuestionDefinition::toResponse).toList()
+        );
+    }
+
+
     @PostMapping("/quiz/sessions/{sessionId}/answer")
     public QuizAnswerResponse answerQuestion(
         @PathVariable String sessionId,
@@ -172,7 +198,7 @@ public class ChapterController {
         int answeredQuestions = quizSessionPersistenceService.answeredQuestions(sessionId);
         int stars = ResultCalculator.calculateStars(session.getCorrectAnswers(), session.getTotalQuestions());
         boolean completed = answeredQuestions >= session.getTotalQuestions();
-        if (completed) {
+        if (completed && contentCatalogPersistenceService.node(session.getChapterSlug(), session.getNodeId()) != null) {
             userProgressPersistenceService.recordNodeCompletion(
                 session.getUser(),
                 session.getChapterSlug(),

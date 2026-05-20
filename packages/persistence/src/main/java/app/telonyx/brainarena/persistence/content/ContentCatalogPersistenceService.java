@@ -124,6 +124,19 @@ public class ContentCatalogPersistenceService {
             .toList();
     }
 
+    public List<QuestionRow> dailyQuestions(int limit) {
+        return entityManager
+            .createNativeQuery(
+                "select id, type, category, prompt, correct_option_id, explanation "
+                    + "from questions where ranked_eligible = true order by sort_order limit ?"
+            )
+            .setParameter(1, limit)
+            .getResultList()
+            .stream()
+            .map(this::questionRow)
+            .toList();
+    }
+
     public QuestionRow question(String questionId) {
         try {
             Object row = entityManager

@@ -21,6 +21,7 @@
 - Ответы больше не проверяются на клиенте локально для live API.
 - После завершения точки показывается result panel со звёздами и возвратом к карте.
 - В Telegram Mini App карта запрашивается с initData и может показывать сохранённый прогресс пользователя.
+- «Вопрос дня» запускает Daily Ritual quiz session через backend.
 
 ### Backend API
 
@@ -35,6 +36,7 @@
 - Есть server-authoritative quiz endpoints:
   - `POST /api/quiz/sessions/{sessionId}/answer`
   - `POST /api/quiz/sessions/{sessionId}/finish`
+- Есть `POST /api/daily/ritual/start` поверх общего quiz session engine.
 - Start response не отдаёт `correctOptionId`; правильный ответ появляется только после submit.
 - Quiz session и submitted answers сохраняются в PostgreSQL.
 - При полном завершении сессии backend сохраняет лучший результат точки для Telegram-пользователя.
@@ -72,7 +74,7 @@
 
 - Content catalog пока покрывает только первый seeded маршрут.
 - Нет unlock logic по звёздам из БД.
-- Нет daily ritual API.
+- Daily ritual пока использует seeded questions без отдельной streak/reward economy.
 - Нет async PvP duel lifecycle.
 - Нет ranked leaderboard из backend.
 - Нет Telegram deep links для challenge/rematch.
@@ -81,8 +83,7 @@
 
 ## Следующий порядок разработки
 
-1. Добавить unlock logic и честные состояния `available/locked/completed/mastered`.
-2. Добавить daily ritual поверх того же quiz session engine.
-3. Добавить mistake review и personal library shell.
-4. Добавить Telegram challenge links и async PvP MVP.
-5. После этого подключать Stars invoice skeleton.
+1. Добавить streak/reward economy для Daily Ritual.
+2. Добавить mistake review и personal library shell.
+3. Добавить Telegram challenge links и async PvP MVP.
+4. После этого подключать Stars invoice skeleton.
