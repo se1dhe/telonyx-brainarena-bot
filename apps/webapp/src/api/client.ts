@@ -5,6 +5,8 @@ import type {
   ChapterNodeSession,
   ChapterNodeStatus,
   ChapterNodeSummary,
+  PlayerSummary,
+  PlayerSummaryResponse,
   PublicConfig
 } from './contracts'
 
@@ -92,6 +94,37 @@ export async function fetchMe(initData: string, signal?: AbortSignal): Promise<M
     lastName: profile.lastName,
     photoUrl: profile.photoUrl,
     authDate: profile.authDate
+  }
+}
+
+export async function fetchPlayerSummary(initData = '', signal?: AbortSignal): Promise<PlayerSummary | null> {
+  const baseUrl = getApiBaseUrl()
+
+  if (!baseUrl) {
+    return null
+  }
+
+  const response = await fetch(`${baseUrl}/api/player/summary`, {
+    signal,
+    headers: telegramHeaders(initData)
+  })
+
+  if (!response.ok) {
+    throw new Error(`Player summary request failed: ${response.status}`)
+  }
+
+  const summary = (await response.json()) as PlayerSummaryResponse
+  return {
+    name: summary.name,
+    title: summary.title,
+    league: summary.league,
+    iq: summary.skillScore,
+    wins: summary.wins,
+    winrate: summary.winrate,
+    streak: summary.streak,
+    stars: summary.stars,
+    energy: summary.energy,
+    maxStars: summary.maxStars
   }
 }
 

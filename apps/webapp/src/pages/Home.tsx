@@ -4,6 +4,7 @@ import { startChapterNode, startDailyRitual } from '../api/client'
 import type { ChapterNodeSession, ChapterNodeSummary } from '../api/contracts'
 import { useChapterMap } from '../api/useChapterMap'
 import { useMe } from '../api/useMe'
+import { usePlayerSummary } from '../api/usePlayerSummary'
 import { useTelegram } from '../app/providers/TelegramProvider'
 import { AppHeader } from '../components/layout/AppHeader'
 import { BottomNav, type AppView } from '../components/layout/BottomNav'
@@ -19,6 +20,7 @@ import { activeStage, categories, dailyModes, duel, leaderboard, mapNodes, playe
 export function Home() {
   const telegram = useTelegram()
   const me = useMe(telegram)
+  const playerSummary = usePlayerSummary(telegram.initData, player)
   const [activeView, setActiveView] = useState<AppView>('map')
   const fallbackNodes = useMemo(() => mapNodes, [])
   const chapterMap = useChapterMap('path-of-scholar', fallbackNodes, telegram.initData)
@@ -46,19 +48,54 @@ export function Home() {
     }
   }, [playableNode])
   const currentPlayer = useMemo(() => {
+    const summary = playerSummary.player
     const profile = me.profile
     if (!profile) {
-      return player
+      return summary
     }
 
     const displayName = [profile.firstName, profile.lastName].filter(Boolean).join(' ').trim()
     return {
-      ...player,
-      name: displayName || profile.username || player.name
+      ...summary,
+      name: displayName || profile.username || summary.name
     }
-  }, [me.profile])
+  }, [me.profile, playerSummary.player])
+  const currentCategories = useMemo(() => {
+    return categories.map((category, index) => ({
+      ...category,
+      rating: Math.max(0, currentPlayer.iq - index * 37)
+    }))
+  }, [currentPlayer.iq])
+  const currentDuel = useMemo(() => ({
+    ...duel,
+    me: {
+      ...duel.me,
+      name: currentPlayer.name,
+      mmr: currentPlayer.iq,
+      league: currentPlayer.league
+    },
+    opponent: {
+      ...duel.opponent,
+      mmr: Math.max(1000, currentPlayer.iq - 74)
+    }
+  }), [currentPlayer.iq, currentPlayer.league, currentPlayer.name])
+  const currentLeaderboard = useMemo(() => {
+    const rows = leaderboard.map((row) => ({ ...row, active: false }))
+    rows[3] = {
+      place: 4,
+      name: currentPlayer.name,
+      rating: currentPlayer.iq,
+      active: true
+    }
+
+    return rows.sort((left, right) => right.rating - left.rating).map((row, index) => ({
+      ...row,
+      place: index + 1
+    }))
+  }, [currentPlayer.iq, currentPlayer.name])
   const [nodeSession, setNodeSession] = useState<ChapterNodeSession | null>(null)
   const [selectedNode, setSelectedNode] = useState<ChapterNodeSummary | null>(null)
+  const [nodeStartError, setNodeStartError] = useState<string | null>(null)
   const [isStartingNode, setIsStartingNode] = useState(false)
   const [isStartingDaily, setIsStartingDaily] = useState(false)
 
@@ -68,9 +105,17 @@ export function Home() {
     }
 
     setIsStartingNode(true)
+    setNodeStartError(null)
     try {
       const session = await startChapterNode('path-of-scholar', node.id, telegram.initData)
+      if (session.questions.length === 0) {
+        setNodeStartError('В этой точке пока нет вопросов. Попробуй другую доступную точку.')
+        return
+      }
+
       setNodeSession(session)
+    } catch (error) {
+      setNodeStartError(error instanceof Error ? error.message : 'Не удалось открыть точку.')
     } finally {
       setIsStartingNode(false)
     }
@@ -83,9 +128,17 @@ export function Home() {
 
   async function handleStartDailyRitual() {
     setIsStartingDaily(true)
+    setNodeStartError(null)
     try {
       const session = await startDailyRitual(telegram.initData)
+      if (session.questions.length === 0) {
+        setNodeStartError('Ежедневный ритуал пока не содержит вопросов.')
+        return
+      }
+
       setNodeSession(session)
+    } catch (error) {
+      setNodeStartError(error instanceof Error ? error.message : 'Не удалось открыть ежедневный ритуал.')
     } finally {
       setIsStartingDaily(false)
     }
@@ -104,7 +157,7 @@ export function Home() {
         <section className="app-viewport">
           {activeView === 'map' && (
             <div className="screen-stack">
-              <CategoryStrip categories={categories} />
+              <CategoryStrip categories={currentCategories} />
               <ChapterMapCard
                 nodes={chapterMap.nodes}
                 selectedNodeId={selectedNode?.id}
@@ -121,6 +174,11 @@ export function Home() {
                     {isStartingNode ? 'Открываем' : 'Играть'}
                   </button>
                 </div>
+                {nodeStartError && (
+                  <div className="mt-3 rounded-2xl border border-arena-blue/25 bg-arena-blue/10 px-3 py-2 text-sm font-bold text-arena-blue">
+                    {nodeStartError}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -128,13 +186,13 @@ export function Home() {
           {activeView === 'arena' && (
             <div className="screen-stack">
               <button className="arena-secondary w-full">Найти матч</button>
-              <DuelCard duel={duel} />
+              <DuelCard duel={currentDuel} />
             </div>
           )}
 
           {activeView === 'top' && (
             <div className="screen-stack">
-              <Leaderboard rows={leaderboard} />
+              <Leaderboard rows={currentLeaderboard} />
             </div>
           )}
 

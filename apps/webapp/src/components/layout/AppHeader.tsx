@@ -20,7 +20,7 @@ export function AppHeader({ player }: AppHeaderProps) {
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
         <span className="pill" aria-label="Звёзды">
           <Sparkles className="h-4 w-4" />
-          {player.coins}
+          {player.stars}/{player.maxStars}
         </span>
         <span className="pill" aria-label="Энергия">
           <Zap className="h-4 w-4 fill-current" />

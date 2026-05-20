@@ -8,8 +8,22 @@ export type PlayerSummary = {
   wins: number
   winrate: string
   streak: number
-  coins: number
+  stars: number
   energy: number
+  maxStars: number
+}
+
+export type PlayerSummaryResponse = {
+  name: string
+  title: string
+  league: string
+  skillScore: number
+  wins: number
+  winrate: string
+  streak: number
+  stars: number
+  energy: number
+  maxStars: number
 }
 
 export type CategorySummary = {

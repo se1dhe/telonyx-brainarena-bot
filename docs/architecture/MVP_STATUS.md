@@ -15,6 +15,9 @@
 - Категории отображаются горизонтальной каруселью.
 - Вопросы открываются при нажатии на доступную точку карты.
 - Каркас Mini App больше не блокирует вертикальный скролл: экран учитывает safe-area Telegram и нижнюю навигацию.
+- Первая доступная точка `Форум` содержит 15 seeded вопросов и открывает реальную quiz session.
+- Шапка, профиль, арена и топ используют server-derived summary игрока: звёзды, энергию, ранг, победы и skill score.
+- Пустая или битая quiz session больше не валит WebApp в белый экран: показывается recoverable state.
 - Есть категория, рейтинг, daily-блоки, PvP preview, leaderboard, profile.
 - WebApp runtime вызывает Telegram `ready()` и `expand()`.
 - Frontend умеет работать вне Telegram через fallback.
@@ -41,6 +44,7 @@
   - `POST /api/quiz/sessions/{sessionId}/answer`
   - `POST /api/quiz/sessions/{sessionId}/finish`
 - Есть `POST /api/daily/ritual/start` поверх общего quiz session engine.
+- Есть `GET /api/player/summary` для MVP-показателей игрока.
 - Start response не отдаёт `correctOptionId`; правильный ответ появляется только после submit.
 - Quiz session и submitted answers сохраняются в PostgreSQL.
 - При полном завершении сессии backend сохраняет лучший результат точки для Telegram-пользователя.

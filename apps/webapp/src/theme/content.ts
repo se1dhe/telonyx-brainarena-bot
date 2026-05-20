@@ -28,8 +28,9 @@ export const player: PlayerSummary = {
   wins: 128,
   winrate: '72%',
   streak: 7,
-  coins: 1240,
-  energy: 18
+  stars: 0,
+  energy: 18,
+  maxStars: 15
 }
 
 export const categories: CategorySummary[] = [

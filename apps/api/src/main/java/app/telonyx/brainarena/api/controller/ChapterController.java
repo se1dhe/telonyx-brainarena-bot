@@ -149,6 +149,30 @@ public class ChapterController {
         );
     }
 
+    @GetMapping("/player/summary")
+    public PlayerSummaryResponse playerSummary(@RequestHeader HttpHeaders headers) {
+        UserEntity user = authenticatedUser(headers);
+        int stars = userProgressPersistenceService.totalStars(user);
+        int completedNodes = userProgressPersistenceService.completedNodes(user);
+        int skillScore = 1000 + stars * 75 + completedNodes * 20;
+        int maxStars = contentCatalogPersistenceService.chapter("path-of-scholar") == null
+            ? 15
+            : contentCatalogPersistenceService.chapter("path-of-scholar").maxStars();
+
+        return new PlayerSummaryResponse(
+            user == null ? "Гость арены" : user.getDisplayName(),
+            titleFor(completedNodes, stars),
+            leagueFor(skillScore),
+            skillScore,
+            completedNodes,
+            winrateFor(stars, completedNodes),
+            completedNodes > 0 ? 1 : 0,
+            stars,
+            Math.max(0, 18 - Math.min(6, completedNodes)),
+            maxStars
+        );
+    }
+
 
     @PostMapping("/quiz/sessions/{sessionId}/answer")
     public QuizAnswerResponse answerQuestion(
@@ -306,6 +330,20 @@ public class ChapterController {
     ) {
     }
 
+    public record PlayerSummaryResponse(
+        String name,
+        String title,
+        String league,
+        int skillScore,
+        int wins,
+        String winrate,
+        int streak,
+        int stars,
+        int energy,
+        int maxStars
+    ) {
+    }
+
     private QuizQuestionDefinition findQuestion(String questionId) {
         ContentCatalogPersistenceService.QuestionRow question = contentCatalogPersistenceService.question(questionId);
         if (question == null) {
@@ -361,6 +399,40 @@ public class ChapterController {
             return "COMPLETED";
         }
         return unlocked ? "IN_PROGRESS" : "LOCKED";
+    }
+
+    private String titleFor(int completedNodes, int stars) {
+        if (stars >= 12) {
+            return "Стратег";
+        }
+        if (completedNodes >= 3) {
+            return "Знаток";
+        }
+        if (completedNodes >= 1) {
+            return "Новиций";
+        }
+        return "Кандидат";
+    }
+
+    private String leagueFor(int skillScore) {
+        if (skillScore >= 2200) {
+            return "I";
+        }
+        if (skillScore >= 1800) {
+            return "II";
+        }
+        if (skillScore >= 1400) {
+            return "III";
+        }
+        return "IV";
+    }
+
+    private String winrateFor(int stars, int completedNodes) {
+        if (completedNodes <= 0) {
+            return "0%";
+        }
+
+        return Math.round((stars * 100.0) / (completedNodes * 3.0)) + "%";
     }
 
     private QuizQuestionDefinition questionDefinition(ContentCatalogPersistenceService.QuestionRow question) {

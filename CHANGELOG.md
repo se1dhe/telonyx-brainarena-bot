@@ -42,3 +42,6 @@
 - Reworked Mini App into tabbed Telegram screens: map, arena, leaderboard, and profile no longer stack into one long scroll.
 - Changed category selection to a horizontal carousel and wired map nodes to open quiz sessions directly.
 - Restored Telegram WebApp-friendly scrolling by removing the fixed-height overflow lock, adding safe bottom spacing, and tightening the map screen for mobile viewports.
+- Added real seeded questions for the first playable Forum node so `Играть` opens a quiz instead of an empty session.
+- Added `GET /api/player/summary` and wired the WebApp header/profile/arena/leaderboard to server-derived stars, energy, rank, wins, and skill score.
+- Added frontend recovery states for empty quiz sessions and quiz answer/finish failures.

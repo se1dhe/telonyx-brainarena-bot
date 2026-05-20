@@ -54,6 +54,32 @@ public class UserProgressPersistenceService {
         return result.intValue();
     }
 
+    public int totalStars(UserEntity user) {
+        if (user == null) {
+            return 0;
+        }
+
+        Number result = (Number) entityManager
+            .createNativeQuery("select coalesce(sum(best_stars), 0) from user_node_progress where user_id = ?")
+            .setParameter(1, user.getId())
+            .getSingleResult();
+
+        return result.intValue();
+    }
+
+    public int completedNodes(UserEntity user) {
+        if (user == null) {
+            return 0;
+        }
+
+        Number result = (Number) entityManager
+            .createNativeQuery("select count(*) from user_node_progress where user_id = ? and best_stars > 0")
+            .setParameter(1, user.getId())
+            .getSingleResult();
+
+        return result.intValue();
+    }
+
     public Map<Integer, UserNodeProgressEntity> chapterProgress(UserEntity user, String chapterSlug) {
         if (user == null) {
             return Map.of();

@@ -6,6 +6,8 @@ type ProfileCardProps = {
 }
 
 export function ProfileCard({ player }: ProfileCardProps) {
+  const nextRankProgress = Math.min(100, Math.round((player.stars / Math.max(player.maxStars, 1)) * 100))
+
   return (
     <section className="arena-card p-4">
       <p className="arena-label">Профиль</p>
@@ -26,9 +28,9 @@ export function ProfileCard({ player }: ProfileCardProps) {
       </div>
       <p className="mt-4 text-sm text-arena-muted">До следующего ранга</p>
       <div className="mt-2 h-2 overflow-hidden rounded-full bg-codex-sand">
-        <div className="h-full w-[63%] rounded-full bg-arena-blue" />
+        <div className="h-full rounded-full bg-arena-blue" style={{ width: `${nextRankProgress}%` }} />
       </div>
-      <p className="mt-2 text-sm text-arena-blue">633 / 1000</p>
+      <p className="mt-2 text-sm text-arena-blue">{player.stars} / {player.maxStars} звёзд</p>
     </section>
   )
 }

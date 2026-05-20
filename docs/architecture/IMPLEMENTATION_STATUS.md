@@ -63,7 +63,7 @@ apps/webapp
 - server-authoritative answer check для live API;
 - карта прохождения главы;
 - категории;
-- рейтинг игрока;
+- рейтинг игрока из server-derived summary;
 - daily modes;
 - PvP duel card;
 - leaderboard;
@@ -115,6 +115,7 @@ GET  /api/courses
 GET  /api/courses/{courseSlug}/chapters
 GET  /api/chapters/{chapterSlug}/map
 POST /api/chapters/{chapterSlug}/nodes/{nodeId}/start
+GET  /api/player/summary
 POST /api/quiz/sessions/{sessionId}/answer
 POST /api/quiz/sessions/{sessionId}/finish
 ```
@@ -394,6 +395,8 @@ Redis
 9. Mini App показывает result panel после завершения точки и обновляет карту после возврата.
 10. Добавлен content catalog seed для `courses`, `chapters`, `chapter_nodes`, `questions`, `question_options`.
 11. `ChapterController` читает каталог из PostgreSQL через `ContentCatalogPersistenceService`.
+12. Добавлены 15 seeded вопросов для первой playable-точки `Форум`.
+13. Добавлен `GET /api/player/summary` для server-derived звёзд, энергии, ранга, побед, winrate и skill score.
 12. Карточка активной точки в Mini App берётся из состояния карты, а не из статичного mock.
 13. Добавлен `POST /api/daily/ritual/start`; «Вопрос дня» запускает daily quiz session.
 14. Mini App переведён на tab shell: карта, арена, топ и профиль больше не складываются в одну длинную страницу.
