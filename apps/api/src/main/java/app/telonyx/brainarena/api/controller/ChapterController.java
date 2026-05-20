@@ -1,7 +1,11 @@
 package app.telonyx.brainarena.api.controller;
 
+import app.telonyx.brainarena.domain.ranked.RankService;
 import app.telonyx.brainarena.domain.quiz.ResultCalculator;
 import app.telonyx.brainarena.persistence.content.ContentCatalogPersistenceService;
+import app.telonyx.brainarena.persistence.daily.DailyRitualEntity;
+import app.telonyx.brainarena.persistence.daily.DailyRitualPersistenceService;
+import app.telonyx.brainarena.persistence.daily.UserStreakEntity;
 import app.telonyx.brainarena.persistence.progress.UserNodeProgressEntity;
 import app.telonyx.brainarena.persistence.progress.UserProgressPersistenceService;
 import app.telonyx.brainarena.persistence.quiz.QuizSessionEntity;
@@ -33,19 +37,25 @@ public class ChapterController {
     private final UserProgressPersistenceService userProgressPersistenceService;
     private final TelegramInitDataValidator telegramInitDataValidator;
     private final UserIdentityService userIdentityService;
+    private final RankService rankService;
+    private final DailyRitualPersistenceService dailyRitualPersistenceService;
 
     public ChapterController(
         ContentCatalogPersistenceService contentCatalogPersistenceService,
         QuizSessionPersistenceService quizSessionPersistenceService,
         UserProgressPersistenceService userProgressPersistenceService,
         TelegramInitDataValidator telegramInitDataValidator,
-        UserIdentityService userIdentityService
+        UserIdentityService userIdentityService,
+        RankService rankService,
+        DailyRitualPersistenceService dailyRitualPersistenceService
     ) {
         this.contentCatalogPersistenceService = contentCatalogPersistenceService;
         this.quizSessionPersistenceService = quizSessionPersistenceService;
         this.userProgressPersistenceService = userProgressPersistenceService;
         this.telegramInitDataValidator = telegramInitDataValidator;
         this.userIdentityService = userIdentityService;
+        this.rankService = rankService;
+        this.dailyRitualPersistenceService = dailyRitualPersistenceService;
     }
 
     @GetMapping("/courses")
@@ -126,14 +136,25 @@ public class ChapterController {
 
     @PostMapping("/daily/ritual/start")
     public NodeSessionResponse startDailyRitual(@RequestHeader HttpHeaders headers) {
+        UserEntity user = authenticatedUser(headers);
         String sessionId = "daily-ritual-" + UUID.randomUUID();
         List<QuizQuestionDefinition> questions = contentCatalogPersistenceService.dailyQuestions(3)
             .stream()
             .map(this::questionDefinition)
             .toList();
+
+        if (user != null) {
+            DailyRitualEntity today = dailyRitualPersistenceService.getTodayRitual(user);
+            if (today != null && today.isCompleted()) {
+                throw new DailyRitualCompletedException();
+            }
+
+            sessionId = dailyRitualPersistenceService.startDailyRitual(user, sessionId).getSessionId();
+        }
+
         quizSessionPersistenceService.startSession(
             sessionId,
-            authenticatedUser(headers),
+            user,
             "daily-ritual",
             0,
             questions.size()
@@ -149,23 +170,41 @@ public class ChapterController {
         );
     }
 
+    @GetMapping("/daily/ritual/status")
+    public DailyRitualStatusResponse dailyRitualStatus(@RequestHeader HttpHeaders headers) {
+        UserEntity user = authenticatedUser(headers);
+        if (user == null) {
+            return new DailyRitualStatusResponse(false, 0, 0, 0, 0);
+        }
+
+        DailyRitualEntity today = dailyRitualPersistenceService.getTodayRitual(user);
+        UserStreakEntity streak = dailyRitualPersistenceService.getUserStreak(user);
+        return new DailyRitualStatusResponse(
+            today != null && today.isCompleted(),
+            today == null ? 0 : today.getStarsEarned(),
+            streak == null ? 0 : streak.getCurrentStreak(),
+            streak == null ? 0 : streak.getLongestStreak(),
+            streak == null ? 0 : streak.getStreakSaves()
+        );
+    }
+
     @GetMapping("/player/summary")
     public PlayerSummaryResponse playerSummary(@RequestHeader HttpHeaders headers) {
         UserEntity user = authenticatedUser(headers);
         int stars = userProgressPersistenceService.totalStars(user);
         int completedNodes = userProgressPersistenceService.completedNodes(user);
-        int skillScore = 1000 + stars * 75 + completedNodes * 20;
+        int skillScore = rankService.calculateSkillScore(stars, completedNodes);
         int maxStars = contentCatalogPersistenceService.chapter("path-of-scholar") == null
             ? 15
             : contentCatalogPersistenceService.chapter("path-of-scholar").maxStars();
 
         return new PlayerSummaryResponse(
             user == null ? "Гость арены" : user.getDisplayName(),
-            titleFor(completedNodes, stars),
-            leagueFor(skillScore),
+            rankService.titleFor(completedNodes, stars),
+            rankService.leagueFor(skillScore),
             skillScore,
             completedNodes,
-            winrateFor(stars, completedNodes),
+            rankService.winrateFor(stars, completedNodes),
             completedNodes > 0 ? 1 : 0,
             stars,
             Math.max(0, 18 - Math.min(6, completedNodes)),
@@ -231,6 +270,8 @@ public class ChapterController {
                 session.getCorrectAnswers(),
                 session.getTotalQuestions()
             );
+        } else if (completed && "daily-ritual".equals(session.getChapterSlug())) {
+            dailyRitualPersistenceService.finishDailyRitual(sessionId, stars);
         }
 
         return new QuizResultResponse(
@@ -344,6 +385,15 @@ public class ChapterController {
     ) {
     }
 
+    public record DailyRitualStatusResponse(
+        boolean completedToday,
+        int starsEarned,
+        int currentStreak,
+        int longestStreak,
+        int streakSaves
+    ) {
+    }
+
     private QuizQuestionDefinition findQuestion(String questionId) {
         ContentCatalogPersistenceService.QuestionRow question = contentCatalogPersistenceService.question(questionId);
         if (question == null) {
@@ -401,39 +451,7 @@ public class ChapterController {
         return unlocked ? "IN_PROGRESS" : "LOCKED";
     }
 
-    private String titleFor(int completedNodes, int stars) {
-        if (stars >= 12) {
-            return "Стратег";
-        }
-        if (completedNodes >= 3) {
-            return "Знаток";
-        }
-        if (completedNodes >= 1) {
-            return "Новиций";
-        }
-        return "Кандидат";
-    }
 
-    private String leagueFor(int skillScore) {
-        if (skillScore >= 2200) {
-            return "I";
-        }
-        if (skillScore >= 1800) {
-            return "II";
-        }
-        if (skillScore >= 1400) {
-            return "III";
-        }
-        return "IV";
-    }
-
-    private String winrateFor(int stars, int completedNodes) {
-        if (completedNodes <= 0) {
-            return "0%";
-        }
-
-        return Math.round((stars * 100.0) / (completedNodes * 3.0)) + "%";
-    }
 
     private QuizQuestionDefinition questionDefinition(ContentCatalogPersistenceService.QuestionRow question) {
         return new QuizQuestionDefinition(
@@ -460,6 +478,10 @@ public class ChapterController {
 
     @ResponseStatus(HttpStatus.CONFLICT)
     private static class LockedNodeException extends RuntimeException {
+    }
+
+    @ResponseStatus(HttpStatus.CONFLICT)
+    private static class DailyRitualCompletedException extends RuntimeException {
     }
 
     private record QuizQuestionDefinition(

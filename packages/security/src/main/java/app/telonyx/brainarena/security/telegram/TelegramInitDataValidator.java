@@ -106,60 +106,24 @@ public class TelegramInitDataValidator {
             return null;
         }
 
-        Long id = extractLong(rawJson, "id");
-        if (id == null) {
-            return null;
-        }
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            com.fasterxml.jackson.databind.JsonNode node = mapper.readTree(rawJson);
 
-        return new TelegramUser(
-            id,
-            extractString(rawJson, "username"),
-            extractString(rawJson, "first_name"),
-            extractString(rawJson, "last_name"),
-            extractString(rawJson, "photo_url")
-        );
-    }
-
-    private Long extractLong(String json, String field) {
-        String marker = "\"" + field + "\":";
-        int start = json.indexOf(marker);
-        if (start < 0) {
-            return null;
-        }
-        start += marker.length();
-        int end = start;
-        while (end < json.length() && Character.isDigit(json.charAt(end))) {
-            end++;
-        }
-        if (end == start) {
-            return null;
-        }
-        return Long.parseLong(json.substring(start, end));
-    }
-
-    private String extractString(String json, String field) {
-        String marker = "\"" + field + "\":\"";
-        int start = json.indexOf(marker);
-        if (start < 0) {
-            return null;
-        }
-        start += marker.length();
-        StringBuilder value = new StringBuilder();
-        boolean escaped = false;
-        for (int i = start; i < json.length(); i++) {
-            char c = json.charAt(i);
-            if (escaped) {
-                value.append(c);
-                escaped = false;
-            } else if (c == '\\') {
-                escaped = true;
-            } else if (c == '"') {
-                return value.toString();
-            } else {
-                value.append(c);
+            if (!node.has("id")) {
+                return null;
             }
+
+            return new TelegramUser(
+                node.get("id").asLong(),
+                node.hasNonNull("username") ? node.get("username").asText() : null,
+                node.hasNonNull("first_name") ? node.get("first_name").asText() : null,
+                node.hasNonNull("last_name") ? node.get("last_name").asText() : null,
+                node.hasNonNull("photo_url") ? node.get("photo_url").asText() : null
+            );
+        } catch (Exception e) {
+            return null;
         }
-        return null;
     }
 
     private byte[] hmacBytes(String data, String key) {

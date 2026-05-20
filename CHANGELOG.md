@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-05-20
+
+- Added Gradle wrapper files and ignored local Gradle/build artifacts.
+- Removed obsolete tracked frontend duplicates now that `apps/webapp` is the canonical Telegram Mini App.
+- Extracted rank/skill-score calculations into `RankService`.
+- Added Daily Ritual persistence: `daily_rituals`, `user_streaks`, entities, repositories, and streak service.
+- Added `GET /api/daily/ritual/status` and wired Daily Ritual completion to streak updates through the existing quiz finish flow.
+- Replaced ad hoc Telegram user JSON parsing with Jackson-backed parsing.
+- Verified `./gradlew test` and `apps/webapp` `npm run build`.
+
 ## 2026-05-19
 
 - Pulled latest monorepo updates from `origin/main`.

@@ -1,6 +1,6 @@
 # MVP_STATUS — Brain Arena
 
-Дата: 2026-05-19
+Дата: 2026-05-20
 
 Этот документ фиксирует практический срез MVP после синхронизации `main`.
 
@@ -29,6 +29,7 @@
 - После завершения точки показывается result panel со звёздами и возвратом к карте.
 - В Telegram Mini App карта запрашивается с initData и может показывать сохранённый прогресс пользователя.
 - «Вопрос дня» запускает Daily Ritual quiz session через backend.
+- Daily Ritual получил backend status endpoint и streak state.
 
 ### Backend API
 
@@ -44,6 +45,7 @@
   - `POST /api/quiz/sessions/{sessionId}/answer`
   - `POST /api/quiz/sessions/{sessionId}/finish`
 - Есть `POST /api/daily/ritual/start` поверх общего quiz session engine.
+- Есть `GET /api/daily/ritual/status`.
 - Есть `GET /api/player/summary` для MVP-показателей игрока.
 - Start response не отдаёт `correctOptionId`; правильный ответ появляется только после submit.
 - Quiz session и submitted answers сохраняются в PostgreSQL.
@@ -60,6 +62,7 @@
 - Добавлена миграция `quiz_sessions` и `quiz_answers`.
 - Добавлена миграция `user_node_progress`.
 - Добавлена миграция content catalog: `courses`, `chapters`, `chapter_nodes`, `questions`, `question_options`.
+- Добавлена миграция `daily_rituals` и `user_streaks`.
 - Добавлены JPA entities и `UserIdentityService`.
 - Добавлен `QuizSessionPersistenceService`.
 - Добавлен `UserProgressPersistenceService`.
@@ -82,7 +85,7 @@
 
 - Content catalog пока покрывает только первый seeded маршрут.
 - Нет unlock logic по звёздам из БД.
-- Daily ritual пока использует seeded questions без отдельной streak/reward economy.
+- Daily ritual уже хранит streak state, но reward economy и полноценный UI статуса ещё черновые.
 - Нет async PvP duel lifecycle.
 - Нет ranked leaderboard из backend.
 - Нет Telegram deep links для challenge/rematch.
@@ -91,7 +94,7 @@
 
 ## Следующий порядок разработки
 
-1. Добавить streak/reward economy для Daily Ritual.
+1. Довести Daily Ritual UI: status, completed state, streak display, reward copy.
 2. Добавить mistake review и personal library shell.
 3. Добавить Telegram challenge links и async PvP MVP.
 4. После этого подключать Stars invoice skeleton.
