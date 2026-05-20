@@ -15,12 +15,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -47,15 +49,22 @@ public class ChapterController {
     }
 
     @GetMapping("/courses")
-    public List<CourseResponse> courses() {
+    public List<CourseResponse> courses(@RequestHeader HttpHeaders headers) {
+        UserEntity user = authenticatedUser(headers);
         return contentCatalogPersistenceService.courses()
             .stream()
-            .map(course -> new CourseResponse(course.slug(), course.title(), course.maxStars(), defaultCourseStars(course.slug())))
+            .map(course -> new CourseResponse(
+                course.slug(),
+                course.title(),
+                course.maxStars(),
+                userProgressPersistenceService.courseStars(user, course.slug())
+            ))
             .toList();
     }
 
     @GetMapping("/courses/{courseSlug}/chapters")
-    public List<ChapterResponse> chapters(@PathVariable String courseSlug) {
+    public List<ChapterResponse> chapters(@PathVariable String courseSlug, @RequestHeader HttpHeaders headers) {
+        UserEntity user = authenticatedUser(headers);
         return contentCatalogPersistenceService.chapters(courseSlug)
             .stream()
             .map(chapter -> new ChapterResponse(
@@ -64,7 +73,7 @@ public class ChapterController {
                 chapter.subtitle(),
                 chapter.courseSlug(),
                 chapter.maxStars(),
-                defaultChapterStars(chapter.slug())
+                userProgressPersistenceService.chapterStars(user, chapter.slug())
             ))
             .toList();
     }
@@ -73,14 +82,8 @@ public class ChapterController {
     public ChapterMapResponse chapterMap(@PathVariable String chapterSlug, @RequestHeader HttpHeaders headers) {
         UserEntity user = authenticatedUser(headers);
         ContentCatalogPersistenceService.ChapterRow chapter = contentCatalogPersistenceService.chapter(chapterSlug);
-        List<ChapterNodeResponse> nodes = contentCatalogPersistenceService.nodes(chapterSlug)
-            .stream()
-            .map(this::nodeResponse)
-            .toList();
-        if (user != null) {
-            Map<Integer, UserNodeProgressEntity> progress = userProgressPersistenceService.chapterProgress(user, chapterSlug);
-            nodes = nodes.stream().map(node -> applyProgress(node, progress.get(node.id()))).toList();
-        }
+        Map<Integer, UserNodeProgressEntity> progress = userProgressPersistenceService.chapterProgress(user, chapterSlug);
+        List<ChapterNodeResponse> nodes = buildNodeResponses(chapterSlug, progress);
 
         return new ChapterMapResponse(
             chapterSlug,
@@ -97,12 +100,18 @@ public class ChapterController {
         @PathVariable int nodeId,
         @RequestHeader HttpHeaders headers
     ) {
+        UserEntity user = authenticatedUser(headers);
+        Map<Integer, UserNodeProgressEntity> progress = userProgressPersistenceService.chapterProgress(user, chapterSlug);
+        if (!isNodeUnlocked(chapterSlug, nodeId, progress)) {
+            throw new LockedNodeException();
+        }
+
         String sessionId = "node-" + chapterSlug + "-" + nodeId + "-" + UUID.randomUUID();
         List<QuizQuestionDefinition> questions = contentCatalogPersistenceService.questions(chapterSlug, nodeId)
             .stream()
             .map(this::questionDefinition)
             .toList();
-        quizSessionPersistenceService.startSession(sessionId, authenticatedUser(headers), chapterSlug, nodeId, questions.size());
+        quizSessionPersistenceService.startSession(sessionId, user, chapterSlug, nodeId, questions.size());
         ContentCatalogPersistenceService.NodeRow node = contentCatalogPersistenceService.node(chapterSlug, nodeId);
 
         return new NodeSessionResponse(
@@ -280,16 +289,52 @@ public class ChapterController {
         return questionDefinition(question);
     }
 
-    private ChapterNodeResponse nodeResponse(ContentCatalogPersistenceService.NodeRow node) {
-        return new ChapterNodeResponse(
-            node.nodeId(),
-            node.title(),
-            node.subtitle(),
-            defaultNodeStars(node.nodeId()),
-            defaultNodeStatus(node.nodeId()),
-            node.positionX(),
-            node.positionY()
-        );
+    private List<ChapterNodeResponse> buildNodeResponses(
+        String chapterSlug,
+        Map<Integer, UserNodeProgressEntity> progress
+    ) {
+        List<ContentCatalogPersistenceService.NodeRow> nodes = contentCatalogPersistenceService.nodes(chapterSlug);
+        boolean nextNodeUnlocked = true;
+        java.util.ArrayList<ChapterNodeResponse> responses = new java.util.ArrayList<>();
+
+        for (ContentCatalogPersistenceService.NodeRow node : nodes) {
+            UserNodeProgressEntity nodeProgress = progress.get(node.nodeId());
+            int stars = nodeProgress == null ? 0 : nodeProgress.getBestStars();
+            String status = nodeStatus(stars, nextNodeUnlocked);
+            responses.add(new ChapterNodeResponse(
+                node.nodeId(),
+                node.title(),
+                node.subtitle(),
+                stars,
+                status,
+                node.positionX(),
+                node.positionY()
+            ));
+
+            nextNodeUnlocked = stars > 0;
+        }
+
+        return responses;
+    }
+
+    private boolean isNodeUnlocked(
+        String chapterSlug,
+        int nodeId,
+        Map<Integer, UserNodeProgressEntity> progress
+    ) {
+        return buildNodeResponses(chapterSlug, progress)
+            .stream()
+            .anyMatch(node -> node.id() == nodeId && !"LOCKED".equals(node.status()));
+    }
+
+    private String nodeStatus(int stars, boolean unlocked) {
+        if (stars >= 3) {
+            return "MASTERED";
+        }
+        if (stars > 0) {
+            return "COMPLETED";
+        }
+        return unlocked ? "IN_PROGRESS" : "LOCKED";
     }
 
     private QuizQuestionDefinition questionDefinition(ContentCatalogPersistenceService.QuestionRow question) {
@@ -304,23 +349,6 @@ public class ChapterController {
         );
     }
 
-    private ChapterNodeResponse applyProgress(ChapterNodeResponse node, UserNodeProgressEntity progress) {
-        if (progress == null || progress.getBestStars() <= node.stars()) {
-            return node;
-        }
-
-        String status = progress.getBestStars() >= 3 ? "MASTERED" : "COMPLETED";
-        return new ChapterNodeResponse(
-            node.id(),
-            node.title(),
-            node.subtitle(),
-            progress.getBestStars(),
-            status,
-            node.positionX(),
-            node.positionY()
-        );
-    }
-
     private UserEntity authenticatedUser(HttpHeaders headers) {
         String initData = headers.getFirst("X-Telegram-Init-Data");
         TelegramAuthResult result = telegramInitDataValidator.validate(initData);
@@ -332,30 +360,8 @@ public class ChapterController {
         return account.getUser();
     }
 
-    private int defaultCourseStars(String courseSlug) {
-        return "general-knowledge".equals(courseSlug) ? 6 : 0;
-    }
-
-    private int defaultChapterStars(String chapterSlug) {
-        return "path-of-scholar".equals(chapterSlug) ? 6 : 0;
-    }
-
-    private int defaultNodeStars(int nodeId) {
-        return switch (nodeId) {
-            case 1 -> 3;
-            case 2 -> 2;
-            case 3 -> 1;
-            default -> 0;
-        };
-    }
-
-    private String defaultNodeStatus(int nodeId) {
-        return switch (nodeId) {
-            case 1 -> "MASTERED";
-            case 2 -> "COMPLETED";
-            case 3 -> "IN_PROGRESS";
-            default -> "LOCKED";
-        };
+    @ResponseStatus(HttpStatus.CONFLICT)
+    private static class LockedNodeException extends RuntimeException {
     }
 
     private record QuizQuestionDefinition(
