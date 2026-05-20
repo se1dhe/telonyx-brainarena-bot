@@ -49,6 +49,7 @@
 - Есть `GET /api/daily/ritual/status`.
 - Есть `GET /api/player/summary` для MVP-показателей игрока.
 - Start response не отдаёт `correctOptionId`; правильный ответ появляется только после submit.
+- Answer endpoint принимает только вопросы из активной session scope: текущая точка карты или ranked-eligible Daily Ritual content.
 - Quiz session и submitted answers сохраняются в PostgreSQL.
 - При полном завершении сессии backend сохраняет лучший результат точки для Telegram-пользователя.
 - Есть Telegram initData validation.
@@ -85,7 +86,7 @@
 ## Ещё не готово для нормального MVP
 
 - Content catalog пока покрывает только первый seeded маршрут.
-- Нет unlock logic по звёздам из БД.
+- Unlock logic по звёздам из БД есть для главы, но пока без расширенной экономики наград и chapter gating.
 - Daily ritual уже хранит streak state, но reward economy и полноценный UI статуса ещё черновые.
 - Нет async PvP duel lifecycle.
 - Нет ranked leaderboard из backend.

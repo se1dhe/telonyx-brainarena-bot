@@ -8,6 +8,7 @@
 - Added Daily Ritual persistence: `daily_rituals`, `user_streaks`, entities, repositories, and streak service.
 - Added `GET /api/daily/ritual/status` and wired Daily Ritual completion to streak updates through the existing quiz finish flow.
 - Connected the Profile daily block to `GET /api/daily/ritual/status` so streak, daily completion, and earned stars are shown from backend state.
+- Restricted quiz answer validation to questions that belong to the active session's chapter node, with Daily Ritual limited to ranked-eligible content.
 - Replaced ad hoc Telegram user JSON parsing with Jackson-backed parsing.
 - Verified `./gradlew test` and `apps/webapp` `npm run build`.
 

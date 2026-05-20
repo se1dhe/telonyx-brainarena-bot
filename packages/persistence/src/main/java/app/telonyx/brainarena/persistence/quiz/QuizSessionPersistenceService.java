@@ -82,6 +82,10 @@ public class QuizSessionPersistenceService {
         return count.intValue();
     }
 
+    public QuizSessionEntity session(String sessionToken) {
+        return findSession(sessionToken);
+    }
+
     private QuizSessionEntity findSession(String sessionToken) {
         try {
             return entityManager

@@ -123,6 +123,7 @@ POST /api/quiz/sessions/{sessionId}/finish
 ```
 
 Quiz session и submitted answers уже сохраняются через `packages:persistence`.
+`POST /api/quiz/sessions/{sessionId}/answer` validates the submitted `questionId` against the active session scope. Map sessions only accept questions from their chapter node; Daily Ritual sessions only accept ranked-eligible catalog questions.
 
 Telegram auth slice:
 

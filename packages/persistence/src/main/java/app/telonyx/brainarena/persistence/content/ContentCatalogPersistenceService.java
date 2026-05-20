@@ -149,6 +149,38 @@ public class ContentCatalogPersistenceService {
         }
     }
 
+    public QuestionRow question(String chapterSlug, int nodeId, String questionId) {
+        try {
+            Object row = entityManager
+                .createNativeQuery(
+                    "select id, type, category, prompt, correct_option_id, explanation "
+                        + "from questions where chapter_slug = ? and node_id = ? and id = ?"
+                )
+                .setParameter(1, chapterSlug)
+                .setParameter(2, nodeId)
+                .setParameter(3, questionId)
+                .getSingleResult();
+            return questionRow(row);
+        } catch (NoResultException ignored) {
+            return null;
+        }
+    }
+
+    public QuestionRow rankedQuestion(String questionId) {
+        try {
+            Object row = entityManager
+                .createNativeQuery(
+                    "select id, type, category, prompt, correct_option_id, explanation "
+                        + "from questions where id = ? and ranked_eligible = true"
+                )
+                .setParameter(1, questionId)
+                .getSingleResult();
+            return questionRow(row);
+        } catch (NoResultException ignored) {
+            return null;
+        }
+    }
+
     private QuestionRow questionRow(Object row) {
         Object[] values = (Object[]) row;
         String questionId = (String) values[0];

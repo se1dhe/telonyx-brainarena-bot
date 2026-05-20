@@ -218,7 +218,12 @@ public class ChapterController {
         @PathVariable String sessionId,
         @RequestBody QuizAnswerRequest request
     ) {
-        QuizQuestionDefinition question = findQuestion(request.questionId());
+        QuizSessionEntity activeSession = quizSessionPersistenceService.session(sessionId);
+        if (activeSession == null) {
+            return QuizAnswerResponse.missingSession(request.questionId(), request.optionId());
+        }
+
+        QuizQuestionDefinition question = findSessionQuestion(activeSession, request.questionId());
         if (question == null) {
             return QuizAnswerResponse.missingQuestion(request.questionId(), request.optionId());
         }
@@ -235,7 +240,6 @@ public class ChapterController {
             return QuizAnswerResponse.missingSession(request.questionId(), request.optionId());
         }
 
-        QuizSessionEntity session = record.session();
         int answeredQuestions = quizSessionPersistenceService.answeredQuestions(sessionId);
         return new QuizAnswerResponse(
             question.id(),
@@ -244,10 +248,10 @@ public class ChapterController {
             record.answer().isCorrect(),
             record.alreadyAnswered(),
             question.explanation(),
-            session.getCorrectAnswers(),
+            record.session().getCorrectAnswers(),
             answeredQuestions,
-            session.getTotalQuestions(),
-            ResultCalculator.calculateStars(session.getCorrectAnswers(), session.getTotalQuestions())
+            record.session().getTotalQuestions(),
+            ResultCalculator.calculateStars(record.session().getCorrectAnswers(), record.session().getTotalQuestions())
         );
     }
 
@@ -396,6 +400,17 @@ public class ChapterController {
 
     private QuizQuestionDefinition findQuestion(String questionId) {
         ContentCatalogPersistenceService.QuestionRow question = contentCatalogPersistenceService.question(questionId);
+        if (question == null) {
+            return null;
+        }
+
+        return questionDefinition(question);
+    }
+
+    private QuizQuestionDefinition findSessionQuestion(QuizSessionEntity session, String questionId) {
+        ContentCatalogPersistenceService.QuestionRow question = "daily-ritual".equals(session.getChapterSlug())
+            ? contentCatalogPersistenceService.rankedQuestion(questionId)
+            : contentCatalogPersistenceService.question(session.getChapterSlug(), session.getNodeId(), questionId);
         if (question == null) {
             return null;
         }
