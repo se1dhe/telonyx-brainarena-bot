@@ -30,6 +30,7 @@
 - В Telegram Mini App карта запрашивается с initData и может показывать сохранённый прогресс пользователя.
 - «Вопрос дня» запускает Daily Ritual quiz session через backend.
 - Daily Ritual получил backend status endpoint и streak state.
+- Блок `Сегодня` в профиле читает Daily Ritual status из backend и показывает серию, рекорд, завершение дня и звёзды.
 
 ### Backend API
 

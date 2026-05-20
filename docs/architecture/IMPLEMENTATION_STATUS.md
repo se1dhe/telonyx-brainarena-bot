@@ -406,6 +406,7 @@ Redis
 18. Добавлен Gradle wrapper, чтобы локальная проверка Java больше не зависела от системного `gradle`.
 19. Добавлен Daily Ritual persistence slice: `daily_rituals`, `user_streaks`, status endpoint и streak update после завершения daily quiz session.
 20. Старые tracked frontend-дубли удалены из рабочей структуры; canonical frontend остаётся в `apps/webapp`.
+21. `DailyModes` в профиле подключён к `GET /api/daily/ritual/status` и показывает streak/completed state из backend.
 
 ---
 

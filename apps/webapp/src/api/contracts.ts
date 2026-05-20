@@ -90,6 +90,14 @@ export type DailyMode = {
   progress: string
 }
 
+export type DailyRitualStatus = {
+  completedToday: boolean
+  starsEarned: number
+  currentStreak: number
+  longestStreak: number
+  streakSaves: number
+}
+
 export type PublicConfig = {
   app: string
   status: string

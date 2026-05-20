@@ -5,6 +5,7 @@ import type {
   ChapterNodeSession,
   ChapterNodeStatus,
   ChapterNodeSummary,
+  DailyRitualStatus,
   PlayerSummary,
   PlayerSummaryResponse,
   PublicConfig
@@ -204,6 +205,31 @@ export async function startDailyRitual(initData = '', signal?: AbortSignal): Pro
   }
 
   return response.json() as Promise<ChapterNodeSession>
+}
+
+export async function fetchDailyRitualStatus(initData = '', signal?: AbortSignal): Promise<DailyRitualStatus> {
+  const baseUrl = getApiBaseUrl()
+
+  if (!baseUrl) {
+    return {
+      completedToday: false,
+      starsEarned: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      streakSaves: 0
+    }
+  }
+
+  const response = await fetch(`${baseUrl}/api/daily/ritual/status`, {
+    signal,
+    headers: telegramHeaders(initData)
+  })
+
+  if (!response.ok) {
+    throw new Error(`Daily ritual status request failed: ${response.status}`)
+  }
+
+  return response.json() as Promise<DailyRitualStatus>
 }
 
 export async function submitQuizAnswer(

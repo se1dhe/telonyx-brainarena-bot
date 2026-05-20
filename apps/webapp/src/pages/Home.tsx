@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import { startChapterNode, startDailyRitual } from '../api/client'
 import type { ChapterNodeSession, ChapterNodeSummary } from '../api/contracts'
 import { useChapterMap } from '../api/useChapterMap'
+import { useDailyRitualStatus } from '../api/useDailyRitualStatus'
 import { useMe } from '../api/useMe'
 import { usePlayerSummary } from '../api/usePlayerSummary'
 import { useTelegram } from '../app/providers/TelegramProvider'
@@ -21,6 +22,7 @@ export function Home() {
   const telegram = useTelegram()
   const me = useMe(telegram)
   const playerSummary = usePlayerSummary(telegram.initData, player)
+  const dailyRitualStatus = useDailyRitualStatus(telegram.initData)
   const [activeView, setActiveView] = useState<AppView>('map')
   const fallbackNodes = useMemo(() => mapNodes, [])
   const chapterMap = useChapterMap('path-of-scholar', fallbackNodes, telegram.initData)
@@ -124,6 +126,7 @@ export function Home() {
   function closeQuizStage() {
     setNodeSession(null)
     chapterMap.refresh()
+    dailyRitualStatus.refresh()
   }
 
   async function handleStartDailyRitual() {
@@ -199,7 +202,12 @@ export function Home() {
           {activeView === 'profile' && (
             <div className="screen-stack">
               <ProfileCard player={currentPlayer} />
-              <DailyModes modes={dailyModes} onStartRitual={handleStartDailyRitual} isStartingRitual={isStartingDaily} />
+              <DailyModes
+                modes={dailyModes}
+                ritual={dailyRitualStatus.ritual}
+                onStartRitual={handleStartDailyRitual}
+                isStartingRitual={isStartingDaily}
+              />
             </div>
           )}
         </section>
