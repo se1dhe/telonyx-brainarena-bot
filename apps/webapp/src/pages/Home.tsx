@@ -1,11 +1,12 @@
-import { X } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { startChapterNode, startDailyRitual } from '../api/client'
+import { X, Landmark, BookOpen, Brain } from 'lucide-react'
+import { useMemo, useState, useEffect } from 'react'
+import { startChapterNode, startDailyRitual, fetchChapters } from '../api/client'
 import type { ChapterNodeSession, ChapterNodeSummary } from '../api/contracts'
 import { useChapterMap } from '../api/useChapterMap'
 import { useDailyRitualStatus } from '../api/useDailyRitualStatus'
 import { useMe } from '../api/useMe'
 import { usePlayerSummary } from '../api/usePlayerSummary'
+import { useCourses } from '../api/useCourses'
 import { useTelegram } from '../app/providers/TelegramProvider'
 import { AppHeader } from '../components/layout/AppHeader'
 import { BottomNav, type AppView } from '../components/layout/BottomNav'
@@ -16,7 +17,7 @@ import { ProfileCard } from '../features/profile/ProfileCard'
 import { DuelCard } from '../features/pvp/DuelCard'
 import { QuizStagePanel } from '../features/quiz/QuizStagePanel'
 import { Leaderboard } from '../features/ranked/Leaderboard'
-import { activeStage, categories, dailyModes, duel, leaderboard, mapNodes, player } from '../theme/content'
+import { activeStage, dailyModes, duel, leaderboard, mapNodes, player } from '../theme/content'
 
 export function Home() {
   const telegram = useTelegram()
@@ -24,8 +25,42 @@ export function Home() {
   const playerSummary = usePlayerSummary(telegram.initData, player)
   const dailyRitualStatus = useDailyRitualStatus(telegram.initData)
   const [activeView, setActiveView] = useState<AppView>('map')
+
+  const { courses, loading: coursesLoading, error: coursesError } = useCourses(telegram.initData)
+  
+  const [activeCourseSlug, setActiveCourseSlug] = useState('general-knowledge')
+  const [activeChapterSlug, setActiveChapterSlug] = useState('path-of-scholar')
+  const [chaptersLoading, setChaptersLoading] = useState(false)
+  const [chaptersError, setChaptersError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let active = true
+    async function loadChapters() {
+      setChaptersLoading(true)
+      setChaptersError(null)
+      try {
+        const chapters = await fetchChapters(activeCourseSlug, telegram.initData)
+        if (active && chapters.length > 0) {
+          setActiveChapterSlug(chapters[0].slug)
+        }
+      } catch (err) {
+        if (active) {
+          setChaptersError(err instanceof Error ? err.message : 'Не удалось загрузить главы курса')
+        }
+      } finally {
+        if (active) {
+          setChaptersLoading(false)
+        }
+      }
+    }
+    loadChapters()
+    return () => {
+      active = false
+    }
+  }, [activeCourseSlug, telegram.initData])
+
   const fallbackNodes = useMemo(() => mapNodes, [])
-  const chapterMap = useChapterMap('path-of-scholar', fallbackNodes, telegram.initData)
+  const chapterMap = useChapterMap(activeChapterSlug, fallbackNodes, telegram.initData)
   const playableNode = useMemo(() => {
     return (
       chapterMap.nodes.find((node) => node.status === 'active')
@@ -63,11 +98,22 @@ export function Home() {
     }
   }, [me.profile, playerSummary.player])
   const currentCategories = useMemo(() => {
-    return categories.map((category, index) => ({
+    const list = courses.length > 0 ? courses : [
+      { slug: 'general-knowledge', title: 'Общие знания', icon: Landmark, maxStars: 15, earnedStars: 6 },
+      { slug: 'roman-history', title: 'История Рима', icon: BookOpen, maxStars: 12, earnedStars: 0 },
+      { slug: 'logic', title: 'Логика', icon: Brain, maxStars: 9, earnedStars: 0 }
+    ].map((c) => ({
+      ...c,
+      icon: c.slug === 'general-knowledge' ? Landmark : c.slug === 'roman-history' ? BookOpen : Brain,
+      rating: 0
+    }))
+
+    return list.map((category, index) => ({
       ...category,
+      active: category.slug === activeCourseSlug,
       rating: Math.max(0, currentPlayer.iq - index * 37)
     }))
-  }, [currentPlayer.iq])
+  }, [courses, activeCourseSlug, currentPlayer.iq])
   const currentDuel = useMemo(() => ({
     ...duel,
     me: {
@@ -109,7 +155,7 @@ export function Home() {
     setIsStartingNode(true)
     setNodeStartError(null)
     try {
-      const session = await startChapterNode('path-of-scholar', node.id, telegram.initData)
+      const session = await startChapterNode(activeChapterSlug, node.id, telegram.initData)
       if (session.questions.length === 0) {
         setNodeStartError('В этой точке пока нет вопросов. Попробуй другую доступную точку.')
         return
@@ -160,29 +206,60 @@ export function Home() {
         <section className="app-viewport">
           {activeView === 'map' && (
             <div className="screen-stack">
-              <CategoryStrip categories={currentCategories} />
-              <ChapterMapCard
-                nodes={chapterMap.nodes}
-                selectedNodeId={selectedNode?.id}
-                onNodeSelect={handleNodeSelect}
-              />
-              <div className="arena-card p-3">
-                <p className="arena-label">Текущая точка</p>
-                <div className="mt-2 flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-xl font-bold text-arena-ivory">{currentStage.title}</h2>
-                    <p className="text-sm text-arena-muted">{currentStage.best}</p>
-                  </div>
-                  <button className="arena-primary min-w-28 px-4" onClick={() => handleStartNode()} disabled={isStartingNode}>
-                    {isStartingNode ? 'Открываем' : 'Играть'}
+              <CategoryStrip categories={currentCategories} onSelect={setActiveCourseSlug} />
+              
+              {coursesError || chaptersError || chapterMap.status === 'error' ? (
+                <div className="arena-card p-5 text-center">
+                  <p className="text-lg font-bold text-arena-blue">Сенат не отвечает</p>
+                  <p className="mt-2 text-sm text-arena-muted">
+                    {coursesError?.message || chaptersError || chapterMap.error || 'Не удалось связаться с сервером.'}
+                  </p>
+                  <button
+                    onClick={() => {
+                      if (coursesError) window.location.reload()
+                      else if (chaptersError) setActiveCourseSlug(activeCourseSlug)
+                      else chapterMap.refresh()
+                    }}
+                    className="arena-secondary mt-4 w-full"
+                  >
+                    Повторить обряд
                   </button>
                 </div>
-                {nodeStartError && (
-                  <div className="mt-3 rounded-2xl border border-arena-blue/25 bg-arena-blue/10 px-3 py-2 text-sm font-bold text-arena-blue">
-                    {nodeStartError}
+              ) : coursesLoading || chaptersLoading || chapterMap.status === 'loading' ? (
+                <div className="arena-card animate-pulse p-4">
+                  <div className="mx-auto h-4 w-1/3 rounded bg-arena-muted/20"></div>
+                  <div className="mt-6 flex flex-col items-center justify-center space-y-4 py-8">
+                    <div className="h-16 w-16 rounded-full bg-arena-muted/20 animate-spin border-4 border-t-arena-blue border-r-transparent border-b-transparent border-l-transparent"></div>
+                    <div className="h-4 w-1/2 rounded bg-arena-muted/10"></div>
+                    <div className="h-4 w-2/3 rounded bg-arena-muted/10"></div>
                   </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <>
+                  <ChapterMapCard
+                    nodes={chapterMap.nodes}
+                    selectedNodeId={selectedNode?.id}
+                    onNodeSelect={handleNodeSelect}
+                  />
+                  <div className="arena-card p-3">
+                    <p className="arena-label">Текущая точка</p>
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <div>
+                        <h2 className="text-xl font-bold text-arena-ivory">{currentStage.title}</h2>
+                        <p className="text-sm text-arena-muted">{currentStage.best}</p>
+                      </div>
+                      <button className="arena-primary min-w-28 px-4" onClick={() => handleStartNode()} disabled={isStartingNode}>
+                        {isStartingNode ? 'Открываем' : 'Играть'}
+                      </button>
+                    </div>
+                    {nodeStartError && (
+                      <div className="mt-3 rounded-2xl border border-arena-blue/25 bg-arena-blue/10 px-3 py-2 text-sm font-bold text-arena-blue">
+                        {nodeStartError}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           )}
 

@@ -34,12 +34,12 @@ export const player: PlayerSummary = {
 }
 
 export const categories: CategorySummary[] = [
-  { title: 'Общие знания', icon: Landmark, active: true, rating: 2367 },
-  { title: 'География', icon: Globe2, rating: 2210 },
-  { title: 'Наука', icon: Atom, rating: 2184 },
-  { title: 'История', icon: BookOpen, rating: 2298 },
-  { title: 'Кино', icon: Clapperboard, rating: 2142 },
-  { title: 'Логика', icon: Sigma, rating: 2321 }
+  { slug: 'general-knowledge', title: 'Общие знания', icon: Landmark, active: true, rating: 2367, maxStars: 15, earnedStars: 6 },
+  { slug: 'geography', title: 'География', icon: Globe2, rating: 2210, maxStars: 10, earnedStars: 0 },
+  { slug: 'science', title: 'Наука', icon: Atom, rating: 2184, maxStars: 10, earnedStars: 0 },
+  { slug: 'history', title: 'История', icon: BookOpen, rating: 2298, maxStars: 10, earnedStars: 0 },
+  { slug: 'cinema', title: 'Кино', icon: Clapperboard, rating: 2142, maxStars: 10, earnedStars: 0 },
+  { slug: 'logic', title: 'Логика', icon: Sigma, rating: 2321, maxStars: 9, earnedStars: 0 }
 ]
 
 export const mapNodes: ChapterNodeSummary[] = [

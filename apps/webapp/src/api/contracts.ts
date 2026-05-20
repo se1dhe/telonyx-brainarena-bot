@@ -27,10 +27,29 @@ export type PlayerSummaryResponse = {
 }
 
 export type CategorySummary = {
+  slug: string
   title: string
   icon: LucideIcon
   active?: boolean
   rating: number
+  maxStars: number
+  earnedStars: number
+}
+
+export type CourseResponse = {
+  slug: string
+  title: string
+  maxStars: number
+  earnedStars: number
+}
+
+export type ChapterResponse = {
+  slug: string
+  title: string
+  subtitle: string
+  courseSlug: string
+  maxStars: number
+  earnedStars: number
 }
 
 export type ChapterNodeStatus = 'done' | 'active' | 'locked'

@@ -8,7 +8,9 @@ import type {
   DailyRitualStatus,
   PlayerSummary,
   PlayerSummaryResponse,
-  PublicConfig
+  PublicConfig,
+  CourseResponse,
+  ChapterResponse
 } from './contracts'
 
 export type MeProfile = {
@@ -127,6 +129,60 @@ export async function fetchPlayerSummary(initData = '', signal?: AbortSignal): P
     energy: summary.energy,
     maxStars: summary.maxStars
   }
+}
+
+export async function fetchCourses(initData = '', signal?: AbortSignal): Promise<CourseResponse[]> {
+  const baseUrl = getApiBaseUrl()
+
+  if (!baseUrl) {
+    return [
+      { slug: 'general-knowledge', title: 'Общие знания', maxStars: 15, earnedStars: 6 },
+      { slug: 'roman-history', title: 'История Рима', maxStars: 12, earnedStars: 0 },
+      { slug: 'logic', title: 'Логика', maxStars: 9, earnedStars: 0 }
+    ]
+  }
+
+  const response = await fetch(`${baseUrl}/api/courses`, {
+    signal,
+    headers: telegramHeaders(initData)
+  })
+
+  if (!response.ok) {
+    throw new Error(`Courses request failed: ${response.status}`)
+  }
+
+  return response.json() as Promise<CourseResponse[]>
+}
+
+export async function fetchChapters(
+  courseSlug: string,
+  initData = '',
+  signal?: AbortSignal
+): Promise<ChapterResponse[]> {
+  const baseUrl = getApiBaseUrl()
+
+  if (!baseUrl) {
+    if (courseSlug === 'general-knowledge') {
+      return [
+        { slug: 'path-of-scholar', title: 'Глава I · Путь знатока', subtitle: 'Первый маршрут Brain Arena', courseSlug, maxStars: 15, earnedStars: 6 },
+        { slug: 'republic', title: 'Глава II · Республика', subtitle: 'Откроется после первой главы', courseSlug, maxStars: 15, earnedStars: 0 }
+      ]
+    }
+    return [
+      { slug: `${courseSlug}-chapter-1`, title: 'Глава I · Начало', subtitle: 'Первые шаги на арене', courseSlug, maxStars: 12, earnedStars: 0 }
+    ]
+  }
+
+  const response = await fetch(`${baseUrl}/api/courses/${courseSlug}/chapters`, {
+    signal,
+    headers: telegramHeaders(initData)
+  })
+
+  if (!response.ok) {
+    throw new Error(`Chapters request failed: ${response.status}`)
+  }
+
+  return response.json() as Promise<ChapterResponse[]>
 }
 
 export async function fetchChapterMap(
