@@ -17,6 +17,43 @@ public class UserProgressPersistenceService {
         this.entityManager = entityManager;
     }
 
+    public int courseStars(UserEntity user, String courseSlug) {
+        if (user == null) {
+            return 0;
+        }
+
+        Number result = (Number) entityManager
+            .createNativeQuery(
+                "select coalesce(sum(progress.best_stars), 0) "
+                    + "from user_node_progress progress "
+                    + "join chapters chapter on chapter.slug = progress.chapter_slug "
+                    + "where progress.user_id = ? and chapter.course_slug = ?"
+            )
+            .setParameter(1, user.getId())
+            .setParameter(2, courseSlug)
+            .getSingleResult();
+
+        return result.intValue();
+    }
+
+    public int chapterStars(UserEntity user, String chapterSlug) {
+        if (user == null) {
+            return 0;
+        }
+
+        Number result = (Number) entityManager
+            .createNativeQuery(
+                "select coalesce(sum(best_stars), 0) "
+                    + "from user_node_progress "
+                    + "where user_id = ? and chapter_slug = ?"
+            )
+            .setParameter(1, user.getId())
+            .setParameter(2, chapterSlug)
+            .getSingleResult();
+
+        return result.intValue();
+    }
+
     public Map<Integer, UserNodeProgressEntity> chapterProgress(UserEntity user, String chapterSlug) {
         if (user == null) {
             return Map.of();
