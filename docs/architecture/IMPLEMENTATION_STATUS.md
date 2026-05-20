@@ -69,6 +69,7 @@ apps/webapp
 - leaderboard;
 - profile card;
 - bottom navigation;
+- Telegram-friendly vertical scroll with safe bottom spacing under the fixed bottom navigation;
 - `apps/webapp/package-lock.json` для `npm ci`;
 - `apps/webapp/railway.json`;
 - webapp Dockerfile.

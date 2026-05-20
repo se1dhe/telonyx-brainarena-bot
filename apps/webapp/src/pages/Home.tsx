@@ -98,7 +98,7 @@ export function Home() {
 
   return (
     <main className="app-shell px-3 pt-[calc(12px+env(safe-area-inset-top))] text-arena-ivory sm:px-5">
-      <div className="mx-auto flex h-full max-w-4xl flex-col gap-3">
+      <div className="mx-auto flex w-full max-w-xl flex-col gap-3">
         <AppHeader player={currentPlayer} />
 
         <section className="app-viewport">

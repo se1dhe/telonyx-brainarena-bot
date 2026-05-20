@@ -41,3 +41,4 @@
 - Added Daily Ritual start flow backed by the same server-authoritative quiz session engine.
 - Reworked Mini App into tabbed Telegram screens: map, arena, leaderboard, and profile no longer stack into one long scroll.
 - Changed category selection to a horizontal carousel and wired map nodes to open quiz sessions directly.
+- Restored Telegram WebApp-friendly scrolling by removing the fixed-height overflow lock, adding safe bottom spacing, and tightening the map screen for mobile viewports.
